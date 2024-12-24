@@ -17,26 +17,24 @@ auto-verifyer 是一个轻量级、功能强大的接口自动化测试框架，
 
 ```yaml
 caseName:
-  plc: for _ in range(len($cache{loopNum})) #  while $cache{_loop} / if $config{_env} = "dev"
-  inter_type: http  # 协议类型 http(s) / ws(s) / sql / redis ...
-  domain: ${_domain}
+  plc: for _ in range(len(${cache.loopNum}))
+  inter_type: http
+  domain: ${cache._domain}
   url: /login
-  method: GET / POST ...
-  header:
-    token: $cache{_token}
-  data: #用于数据的发送 字典、字符串等
-    data_type: json / text / params / file
+  method: POST
+  headers:
+    token: ${cache._token}
+  data:
+    data_type: text
     body:
-      uuid: $func{get_uuid()} # 自定义方法的使用
-      file: $file{image.jpg}  # 用于文件上传
+      uuid: ${func.add(1,1)}
+      file: ${func.get_image('image.jpg')}
   asserts:
     status: resp$.status = 200
     code: resp$.data.code = 0
   extracts:
-    token: resp$.header.set_cookie.token   # 提取请求中的token并以token的名字存入缓存
-    uuid: req$.data.uuid # 从请求中的data提取uuid
-  before_case: # 用于强制用例关联关系的创建
+    token: resp$.header.set_cookie.token
+    uuid: req$.data.uuid
+  before_case:
     - beforeCaseName
 ```
-
-    
