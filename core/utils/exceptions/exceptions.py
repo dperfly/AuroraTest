@@ -7,3 +7,11 @@ class DuplicateCaseError(Exception):
 
     def __str__(self):
         return f"The key exists with the same case_name: {self.common_keys}"
+
+
+class IFException(Exception):
+    Exception("不支持if,仅支持for 和while 语句, 如果想使用if 请使用is_run")
+
+
+class WhileException(Exception):
+    Exception("while True 需要结合timeout使用,否则将陷入死循环！")
