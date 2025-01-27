@@ -4,7 +4,7 @@ from typing import Dict, List
 from dacite import from_dict
 
 from core.models.model import Case, Data
-from core.utils.exceptions.exceptions import DuplicateCaseError
+from core.exceptions import DuplicateCaseError
 
 
 class ReaderCase:

@@ -22,7 +22,7 @@ class CaseController:
 
         # 这里进行不同类型的请求
         if InterType[api_type] == InterType.HTTP:
-            res = HTTPRequest.send_request(case=self.new_case)
+            res = HTTPRequest.send_request(new_case=self.new_case)
 
         return res
 

@@ -6,14 +6,15 @@ import requests
 class HTTPRequest:
 
     @classmethod
-    def send_request(cls, case: Case):
-        method = str(case.method)
-        url = case.domain + case.url
-        headers = case.headers
-        data_type = case.data.data_type
-        body = case.data.body if case.data.body else {}
+    def send_request(cls, new_case: Case):
+        method = new_case.method
+        url = new_case.domain + new_case.url
+        headers = new_case.headers
+        data_type = new_case.data.data_type
+        body = new_case.data.body
 
         if data_type == DataType.JSON:
+            body = body if body else {}
             response = requests.request(method, url, json=body, headers=headers)
         else:
             response = requests.request(method, url, data=body, headers=headers)

@@ -15,3 +15,11 @@ class IFException(Exception):
 
 class WhileException(Exception):
     Exception("while True 需要结合timeout使用,否则将陷入死循环！")
+
+
+class ValueNotFoundError(Exception):
+    pass
+
+
+class GenerateCaseError(Exception):
+    pass

@@ -1,6 +1,6 @@
 import enum
 from dataclasses import dataclass
-from typing import Union, List, Dict, Any
+from typing import Union, List, Dict, Any, Text
 
 
 class InterType(enum.Enum):
@@ -65,3 +65,38 @@ class Case:
     asserts: Dict[str, str]
     before_case: List[str]
 
+
+@dataclass
+class TestMetrics:
+    """ 用例执行数据 """
+    passed: int
+    failed: int
+    broken: int
+    skipped: int
+    total: int
+    pass_rate: float
+    time: Text
+
+
+@enum.unique
+class AllureAttachmentType(enum.Enum):
+    """allure 文件类型"""
+    TEXT = "txt"
+    CSV = "csv"
+    TSV = "tsv"
+    URI_LIST = "uri"
+    HTML = "html"
+    XML = "xml"
+    JSON = "json"
+    YAML = "yaml"
+    PCAP = "pcap"
+    PNG = "png"
+    JPG = "jpg"
+    SVG = "svg"
+    GIF = "gif"
+    BMP = "bmp"
+    TIFF = "tiff"
+    MP4 = "mp4"
+    OGG = "ogg"
+    WEBM = "webm"
+    PDF = "pdf"
