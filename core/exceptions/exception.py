@@ -23,3 +23,7 @@ class ValueNotFoundError(Exception):
 
 class GenerateCaseError(Exception):
     pass
+
+
+class NotFoundTestCaseError(Exception):
+    Exception("没有发现测试用例")

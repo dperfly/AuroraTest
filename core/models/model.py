@@ -51,6 +51,9 @@ class Data:
     data_type: str
     body: Any
 
+    def __str__(self):
+        return f"data_type:{self.data_type} body:{self.body}\n"
+
 
 @dataclass
 class Case:
@@ -63,7 +66,29 @@ class Case:
     data: Data
     extracts: Dict[str, str]
     asserts: Dict[str, str]
-    before_case: List[str]
+    before_cases: List[str]
+
+    def __str__(self):
+        headers = [f"{k}:{v}" for k, v in self.headers.items()]
+        extracts = [f"{k}:{v}" for k, v in self.extracts.items()]
+        asserts = [f"{k}:{v}" for k, v in self.asserts.items()]
+        res = f"""domain:{self.domain}
+url:{self.url}
+method:{self.method}
+headers: 
+{headers}
+data:
+{self.data}
+
+plc:{self.plc}
+inter_type:{self.inter_type}
+
+extracts:
+{extracts}
+
+asserts:
+{asserts}"""
+        return res
 
 
 @dataclass

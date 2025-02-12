@@ -24,4 +24,4 @@ def test_case_model():
     assert c.data.body == {"test": "test"}
     assert c.extracts['token'] == 'resp$.header.set_cookie.token'
     assert c.asserts == {'status': 'resp$.status = 200'}
-    assert c.before_case == 'login'
+    assert c.before_cases == 'login'
