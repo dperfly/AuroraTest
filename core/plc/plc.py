@@ -2,7 +2,7 @@ import functools
 import json
 import threading
 
-from core.utils.exceptions.exceptions import IFException, WhileException
+from core.exceptions import IFException, WhileException
 
 
 def loop_control(plc_str, timeout=None, asserts=None):

@@ -3,9 +3,12 @@ import time
 import pytest
 import requests
 
-from plc import *
+from core.exceptions import WhileException, IFException
+from core.plc import *
 
 from unittest.mock import Mock
+
+from core.plc.plc import loop_control
 
 
 def test_while_control():

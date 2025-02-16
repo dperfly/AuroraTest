@@ -24,7 +24,7 @@ def test_render_case():
                   body={"uuid": " ${func.add(1,1)}", "file": "${func.get_image('image.jpg')}"}),
         asserts={"status": "resp$.status == 200", "code": "resp$.data.code == 0"},
         extracts={"token": "resp$.header.set_cookie.token", "uuid": "req$.data.uuid"},
-        before_case=["beforeCaseName"]
+        before_cases=["beforeCaseName"]
     )
     print(old_c)
     cache = {"loopNum": "10", "_domain": "http://www.baidu.com", "_token": "11sdfsa3245sadsd",

@@ -72,6 +72,8 @@ class TestCaseAutomaticGeneration:
         self.cases_use_cache_dict: dict[str, CaseCacheMap] = {}
         # 用例关系网 key -> values
         self.cases_graph_map: dict[str, set[str]] = {}
+        # 所有 case 字典
+        self.all_case_map: dict[str, Case] = {}
 
         for file_ab_path, file_cases in self.raw_data.items():
             # 获取到fileName和caseName 的map关系
@@ -81,6 +83,8 @@ class TestCaseAutomaticGeneration:
             self.yaml_cases[dir_name + "_" + yaml_name] = cases_name
 
             for case_name, case_value in file_cases.items():
+                # 添加到all_case_map
+                self.all_case_map[case_name] = case_value
                 # 拿到所有case中使用缓存的名字和生成缓存的名字
                 used_caches = ReaderCase.get_cache_name(str(case_value))
                 generated_caches = list(case_value.extracts.keys())
@@ -156,6 +160,9 @@ class TestCaseAutomaticGeneration:
             for k in cases.keys():
                 res.append(k)
         return res
+
+    def get_all_case_map(self) -> dict[str, Case]:
+        return self.all_case_map
 
     def get_all_edges(self):
         res: list[tuple] = []
