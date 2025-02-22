@@ -65,3 +65,19 @@ raw_data['file-case1'] = {
         'asserts': {'status': 'resp$.status = 200'},
         'before_cases': ["case2"]
     })}
+
+
+ws_raw = dict()
+ws_raw['file-login'] = {
+    "login": Case(**{
+        "plc": 'for _ in range(1)',
+        'inter_type': "HTTP",
+        'domain': "${cache._domain}",
+        'url': '/',
+        'method': "GET",
+        'headers': {'token': 'test'},
+        'data': Data(**{"data_type": "json", "body": {"test": "test"}}),
+        'extracts': {'token': 'resp$.header.set_cookie.token'},
+        'asserts': {'status': 'resp$.status = 200'},
+        'before_cases': []
+    })}

@@ -4,20 +4,21 @@ import requests
 
 
 class HTTPRequest:
+    def __init__(self, new_case: Case):
+        self.new_case = new_case
 
-    @classmethod
-    def send_request(cls, new_case: Case):
-        method = new_case.method
-        url = new_case.domain + new_case.url
-        headers = new_case.headers
-        data_type = new_case.data.data_type
-        body = new_case.data.body
+    def send_request(self):
+        method = self.new_case.method
+        uri = self.new_case.domain + self.new_case.url
+        headers = self.new_case.headers
+        data_type = self.new_case.data.data_type
+        body = self.new_case.data.body
 
         if data_type == DataType.JSON:
             body = body if body else {}
-            response = requests.request(method, url, json=body, headers=headers)
+            response = requests.request(method, uri, json=body, headers=headers)
         else:
-            response = requests.request(method, url, data=body, headers=headers)
+            response = requests.request(method, uri, data=body, headers=headers)
 
         print(response.text)
         return response
