@@ -1,6 +1,6 @@
 import enum
-from dataclasses import dataclass
-from typing import Union, List, Dict, Any, Text
+from dataclasses import dataclass, field
+from typing import Union, List, Dict, Any, Text, Optional
 
 
 class InterType(enum.Enum):
@@ -57,16 +57,16 @@ class Data:
 
 @dataclass
 class Case:
-    plc: Union[str, None]
-    inter_type: str
-    domain: str
-    url: str
-    method: str
-    headers: Dict[str, Union[str, List[str]]]
-    data: Data
-    extracts: Dict[str, str]
-    asserts: Dict[str, str]
-    before_cases: List[str]
+    plc: Union[str, None] = ""
+    inter_type: str = "HTTP"
+    domain: str = None
+    url: str = None
+    method: str = "GET"
+    headers: Dict[str, Union[str, List[str]]] = field(default_factory=lambda: {})
+    data: Data = field(default_factory=lambda: Data(data_type="FORM", body=""))
+    extracts: Dict[str, str] = field(default_factory=lambda: {})
+    asserts: Dict[str, str] = field(default_factory=lambda: {})
+    before_cases: List[str] = field(default_factory=lambda: [])
 
     def __str__(self):
         headers = [f"{k}:{v}" for k, v in self.headers.items()]

@@ -20,5 +20,12 @@ class HTTPRequest:
         else:
             response = requests.request(method, uri, data=body, headers=headers)
 
-        print(response.text)
+        response = {
+            "response": {
+                "data": response.text,
+                "headers": dict(response.headers),
+                "status_code": response.status_code
+            }
+        }
+
         return response

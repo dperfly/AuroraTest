@@ -61,6 +61,6 @@ class WSRequest:
     def should_continue(self):
         def stop_condition(response) -> bool:
             """断言结果"""
-            return Asserts.assert_response(response, self.new_case.asserts)
+            return Asserts.assert_response(response, self.new_case)
 
         return stop_condition

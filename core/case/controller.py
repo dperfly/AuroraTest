@@ -4,6 +4,7 @@ from core.models.model import Case, InterType
 from core.plc.plc import loop_control
 from core.asserts.asserts import Asserts
 from core.extracts.extracts import Extracts
+from dataclasses import asdict
 
 
 class CaseController:
@@ -24,6 +25,8 @@ class CaseController:
         if InterType[api_type] == InterType.HTTP:
             res = HTTPRequest(new_case=self.new_case).send_request()
 
+        res['request'] = asdict(self.new_case)
+
         return res
 
     def controller(self):
@@ -33,9 +36,10 @@ class CaseController:
             @loop_control(self.new_case.plc, timeout=60, asserts=self.new_case.asserts)
             def run():
                 return self.run_case()
+
             res = run()
         else:
             res = self.run_case()
-            Asserts.assert_response(res, self.new_case.asserts)
+            Asserts.assert_response(res, self.new_case)
 
-        Extracts.extracts_response(res, self.new_case.extracts)
+        Extracts.extracts_response(res, self.new_case)
