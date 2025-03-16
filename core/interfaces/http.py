@@ -1,4 +1,4 @@
-from core.models.model import Case, DataType
+from core.models.model import Case, DataType, Response
 
 import requests
 
@@ -20,12 +20,6 @@ class HTTPRequest:
         else:
             response = requests.request(method, uri, data=body, headers=headers)
 
-        response = {
-            "response": {
-                "data": response.text,
-                "headers": dict(response.headers),
-                "status_code": response.status_code
-            }
-        }
+        resp = Response(data=response.text, headers=dict(response.headers), status_code=response.status_code)
 
-        return response
+        return resp

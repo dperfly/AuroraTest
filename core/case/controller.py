@@ -1,6 +1,6 @@
 from core.case.render import CaseRender
 from core.interfaces.http import HTTPRequest
-from core.models.model import Case, InterType
+from core.models.model import Case, InterType, RespData
 from core.plc.plc import loop_control
 from core.asserts.asserts import Asserts
 from core.extracts.extracts import Extracts
@@ -25,9 +25,7 @@ class CaseController:
         if InterType[api_type] == InterType.HTTP:
             res = HTTPRequest(new_case=self.new_case).send_request()
 
-        res['request'] = asdict(self.new_case)
-
-        return res
+        return asdict(RespData(request=self.new_case, response=res))
 
     def controller(self):
 

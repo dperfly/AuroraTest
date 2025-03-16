@@ -57,7 +57,7 @@ class Data:
 
 @dataclass
 class Case:
-    plc: Union[str, None] = ""
+    plc: Union[str, None] = None
     inter_type: str = "HTTP"
     domain: str = None
     url: str = None
@@ -125,3 +125,16 @@ class AllureAttachmentType(enum.Enum):
     OGG = "ogg"
     WEBM = "webm"
     PDF = "pdf"
+
+
+@dataclass
+class Response:
+    data: Any
+    headers: Dict[str, Union[str, List[str]]]
+    status_code: int
+
+
+@dataclass
+class RespData:
+    request: Case
+    response: Response
