@@ -13,6 +13,16 @@ def ex_http(resp, path) -> Any:
     res = jsonpath.jsonpath(json.loads(json.dumps(resp)), path)
     if res:
         res = res[0] if len(res) == 1 else res
+    return res
+
+
+def ex_ws(resp, path) -> Any:
+    """
+    TODO 从 ws 请求、响应、头部等数据中提取字段。
+    """
+    res = jsonpath.jsonpath(json.loads(json.dumps(resp)), path)
+    if res:
+        res = res[0] if len(res) == 1 else res
 
     return res
 
@@ -29,4 +39,7 @@ class Extracts:
         for name, path in case.extracts.items():
             if case.inter_type == InterType.HTTP.value:
                 value = ex_http(run_res, path)
+                CacheHandler.update_cache(cache_name=name, value=value)
+            if case.inter_type == InterType.WS.value:
+                value = ex_ws(run_res, path)
                 CacheHandler.update_cache(cache_name=name, value=value)

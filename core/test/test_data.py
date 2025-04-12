@@ -1,6 +1,10 @@
+from core.cache.local_cache import CacheHandler
 from core.models.model import Case, Data
 
-cache = {"loopNum": "2", "_domain": "http://10.70.70.96", "token": "i am token"}
+local_cache = CacheHandler()
+local_cache.update_cache(cache_name="loopNum", value="2")
+local_cache.update_cache(cache_name="_domain", value="http://10.99.99.96")
+local_cache.update_cache(cache_name="token", value="i am token")
 
 
 class TestFunc:
@@ -66,18 +70,18 @@ raw_data['file-case1'] = {
         'before_cases': ["case2"]
     })}
 
-
-ws_raw = dict()
-ws_raw['file-login'] = {
-    "login": Case(**{
+raw_data['file-ws-case3'] = {
+    "ws-case1": Case(**{
         "plc": 'for _ in range(1)',
-        'inter_type': "HTTP",
-        'domain': "${cache._domain}",
+        'inter_type': "WS",
+        'domain': "ws://localhost:8765",
         'url': '/',
         'method': "GET",
         'headers': {'token': 'test'},
-        'data': Data(**{"data_type": "json", "body": {"test": "test"}}),
+        'data': Data(
+            **{"data_type": "json", "body": ['{"test": "test1"}', '{"test": "test2"}', '{"test": "test3"}']}),
         'extracts': {'token': 'resp$.header.set_cookie.token'},
         'asserts': {'status': 'resp$.status = 200'},
         'before_cases': []
-    })}
+    })
+}

@@ -24,3 +24,7 @@ class CacheHandler:
     @staticmethod
     def get_cache_json():
         return json.dumps(_cache, indent=4)
+
+    @staticmethod
+    def get_all_cache():
+        return _cache

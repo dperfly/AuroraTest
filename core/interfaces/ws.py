@@ -1,3 +1,4 @@
+import asyncio
 import websockets
 
 from core.asserts.asserts import Asserts
@@ -9,6 +10,7 @@ class WSRequest:
         self.new_case = new_case
         self.uri = self.new_case.domain + self.new_case.url
         self.websocket = None
+        self.response_rows = []
 
     async def connect(self):
         """连接到WebSocket服务器"""
@@ -47,16 +49,20 @@ class WSRequest:
             for message in messages:
                 await self.send(message)
                 response = await self.receive()
-
+                self.response_rows.append(response)
                 # 检查是否满足停止条件
                 if stop_condition(response):
                     print("Stop condition met. Closing connection.")
-                    break
+                    return
         finally:
             await self.close()
 
     def send_request(self, stop_condition):
-        self.run(self.new_case.data.body, stop_condition)
+        async def run():
+            await self.run(self.new_case.data.body, stop_condition)
+
+        asyncio.run(run())
+        return self.response_rows
 
     def should_continue(self):
         def stop_condition(response) -> bool:

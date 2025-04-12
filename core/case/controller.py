@@ -1,5 +1,6 @@
 from core.case.render import CaseRender
 from core.interfaces.http import HTTPRequest
+from core.interfaces.ws import WSRequest
 from core.models.model import Case, InterType, RespData
 from core.plc.plc import loop_control
 from core.asserts.asserts import Asserts
@@ -24,7 +25,9 @@ class CaseController:
         # 这里进行不同类型的请求
         if InterType[api_type] == InterType.HTTP:
             res = HTTPRequest(new_case=self.new_case).send_request()
-
+        if InterType[api_type] == InterType.WS:
+            ws_client = WSRequest(new_case=self.new_case)
+            res = ws_client.send_request(ws_client.should_continue())
         return asdict(RespData(request=self.new_case, response=res))
 
     def controller(self):
