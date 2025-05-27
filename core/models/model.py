@@ -1,6 +1,9 @@
 import enum
 from dataclasses import dataclass, field
-from typing import Union, List, Dict, Any, Text, Optional
+from typing import Union, List, Dict, Any, Text, Optional, Final
+
+# 虚拟节点，即所有用例的根
+VIRTUAL_NODE: Final = "_"
 
 
 class InterType(enum.Enum):
@@ -72,22 +75,18 @@ class Case:
         headers = [f"{k}:{v}" for k, v in self.headers.items()]
         extracts = [f"{k}:{v}" for k, v in self.extracts.items()]
         asserts = [f"{k}:{v}" for k, v in self.asserts.items()]
-        res = f"""domain:{self.domain}
-url:{self.url}
-method:{self.method}
-headers: 
-{headers}
-data:
-{self.data}
-
-plc:{self.plc}
-inter_type:{self.inter_type}
-
-extracts:
-{extracts}
-
-asserts:
-{asserts}"""
+        res = f"""                                                              
+|---------------|-------------------------------------------------------------------
+| domain        | {self.domain}                                                     
+| url           | {self.url}                                                        
+| method        | {self.method}                                                     
+| headers       | {headers}                                                         
+| data          | {self.data.data_type}:{self.data.body}
+| plc           | {self.plc}                                                        
+| inter_type    | {self.inter_type}                                                 
+| extracts      |{extracts}                                                         
+| asserts       |{asserts}                                                          
+|---------------|-------------------------------------------------------------------"""
         return res
 
 
@@ -138,3 +137,11 @@ class Response:
 class RespData:
     request: Case
     response: Response
+
+
+@dataclass
+class SelectCase:
+    """ 用例过滤条件, 用于筛选用例 """
+    case_names: List[str] = field(default_factory=lambda: [])
+    file_names: List[str] = field(default_factory=lambda: [])
+    dir_names: List[str] = field(default_factory=lambda: [])

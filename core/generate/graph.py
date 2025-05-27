@@ -6,6 +6,7 @@ import random
 
 from core.generate.generate import TestCaseAutomaticGeneration
 from core.generate.reader import ReaderCase
+from core.models.model import VIRTUAL_NODE
 from core.utils.path import data_path
 
 
@@ -60,11 +61,12 @@ class HtmlGraph:
 
         # 添加有向边 (使用 annotations 创建箭头)
         for start_node, end_node in self.edges:
-            if show_nodes and (start_node not in show_nodes or end_node not in show_nodes):
+            if (show_nodes and (start_node not in show_nodes or end_node not in show_nodes)
+                    or start_node == VIRTUAL_NODE):
                 continue  # 不展示无关边
-
-            x0, y0 = self.node_positions[start_node]
-            x1, y1 = self.node_positions[end_node]
+            else:
+                x0, y0 = self.node_positions[start_node]
+                x1, y1 = self.node_positions[end_node]
 
             # 添加边
             fig.add_shape(
@@ -109,17 +111,17 @@ class HtmlGraph:
                             id='node-dropdown',
                             options=[{'label': node, 'value': node} for node in self.nodes],
                             placeholder="选择一个节点",
-                            style={'width': '90%', 'margin': 'auto'}
+                            style={'width': '100%', 'margin': 'auto'}
                         ),
                         className="el-form-item",  # 使用 ElementUI 表单样式
-                        style={'margin-bottom': '20px'}
+                        style={'margin-bottom': '30px'}
                     ),
 
                     # 节点信息展示部分
                     html.Div([
-                        html.H3("节点信息：", className="el-card__header", style={'text-align': 'center'}),
-                        html.Pre(id='node-info', className="el-card__body",
-                                 style={'padding': '20px', 'font-size': '16px'})
+                        # html.H3("节点信息：", className="el-card__header", style={'text-align': 'center'}),
+                        dcc.Markdown(id='node-info', className="el-card__body",
+                                     style={'padding': '20px', 'font-size': '16px'})
                     ], className="el-card",
                         style={'width': '90%', 'height': '400px', 'overflowY': 'auto', 'border-top': '1px solid black',
                                'margin': 'auto'})
@@ -145,9 +147,9 @@ class HtmlGraph:
                 ancestors.add(clicked_node)  # 包括被点击的节点
 
                 # 生成节点的详细信息
-                node_info = f"节点名称: {clicked_node}\n" \
-                            f"坐标: {self.node_positions[clicked_node]}\n" \
-                            f"祖先节点: {', '.join(ancestors - {clicked_node})}\n" \
+                node_info = f"#### 节点名称: {clicked_node}\n" \
+                            f"#### 坐标: {self.node_positions[clicked_node]}\n" \
+                            f"#### 祖先节点: {', '.join(ancestors - {clicked_node})}\n\n" \
                             f"{str(self.cases.get(clicked_node))}"
 
                 # 重新绘制图形并仅显示祖先节点和被点击节点
@@ -160,9 +162,9 @@ class HtmlGraph:
                 ancestors.add(clicked_node)  # 包括被点击的节点
 
                 # 生成节点的详细信息
-                node_info = f"节点名称: {clicked_node}\n" \
-                            f"坐标: {self.node_positions[clicked_node]}\n" \
-                            f"相关节点: {', '.join(ancestors)}\n" \
+                node_info = f"#### 节点名称: {clicked_node}\n" \
+                            f"#### 坐标: {self.node_positions[clicked_node]}\n" \
+                            f"#### 相关节点: {', '.join(ancestors)}\n\n" \
                             f"{str(self.cases.get(clicked_node))}"
 
                 # 高亮显示相关节点，但不隐藏其他节点
@@ -174,7 +176,7 @@ class HtmlGraph:
     def run_server(self, debug=True):
         self.__html_layout()
         self.__update_figure()
-        return self.app.run_server(debug=debug)
+        return self.app.run(debug=debug)
 
 
 if __name__ == '__main__':

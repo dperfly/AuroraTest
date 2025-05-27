@@ -2,6 +2,7 @@ import asyncio
 import websockets
 
 from core.asserts.asserts import Asserts
+from core.log.logger import INFO, WARNING
 from core.models.model import Case
 
 
@@ -15,19 +16,19 @@ class WSRequest:
     async def connect(self):
         """连接到WebSocket服务器"""
         self.websocket = await websockets.connect(self.uri)
-        print("Connected to WebSocket server")
+        WARNING.logger.warning("Connected to WebSocket server")
 
     async def send(self, message):
         """发送消息到WebSocket服务器"""
         if self.websocket:
             await self.websocket.send(message)
-            print(f"Sent: {message}")
+            INFO.logger.info(f"WebSocket Sent: {message}")
 
     async def receive(self):
         """接收WebSocket服务器的响应"""
         if self.websocket:
             response = await self.websocket.recv()
-            print(f"Received: {response}")
+            INFO.logger.info(f"WebSocket Received: {response}")
             return response
         return None
 
@@ -35,7 +36,7 @@ class WSRequest:
         """关闭WebSocket连接"""
         if self.websocket:
             await self.websocket.close()
-            print("WebSocket connection closed")
+            WARNING.logger.warning("WebSocket connection closed")
 
     async def run(self, messages, stop_condition):
         """
@@ -44,7 +45,7 @@ class WSRequest:
         :param stop_condition: 停止条件函数，接收响应并返回布尔值
         """
         await self.connect()
-
+        INFO.logger.info(self.new_case)
         try:
             for message in messages:
                 await self.send(message)
@@ -52,7 +53,7 @@ class WSRequest:
                 self.response_rows.append(response)
                 # 检查是否满足停止条件
                 if stop_condition(response):
-                    print("Stop condition met. Closing connection.")
+                    WARNING.logger.warning("Stop condition met. Closing connection.")
                     return
         finally:
             await self.close()

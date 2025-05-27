@@ -10,7 +10,7 @@ from dataclasses import asdict, dataclass
 
 from core.exceptions import GenerateCaseError
 from core.generate.reader import ReaderCase
-from core.models.model import Case
+from core.models.model import Case, SelectCase, VIRTUAL_NODE
 from core.utils.path import data_path
 
 
@@ -56,11 +56,10 @@ class TestCaseAutomaticGeneration:
         （2）隐式的依赖关系：${cache.x}
     5.没有使用cache的case会先运行，使用了cache的case需要等待对应的cache已经存在于cache中才可以进行执行,通过order来判断
       需要借助pytest_order插件实现? 这种方式后面可能无法并发运行
-      TODO 这里我们可以弄个桶模式，每一个桶从编号小到编号大逐个运行，同一个桶中的case支持并发运行，需要同一个桶中的case全部执行完成，再运行下一个桶的case
-        这样可能只需要一个固定的pytest写法就可以了，不用自动生成case了。
+
     """
 
-    def __init__(self, raw_data=None):
+    def __init__(self, raw_data=None, select_cases: SelectCase = None):
         # 每个yaml的 绝对路径 和 该文件的所有Case对象 的map集合
         if raw_data is None:
             self.raw_data = ReaderCase(data_path()).get_all_cases()
@@ -95,6 +94,12 @@ class TestCaseAutomaticGeneration:
                         self.cases_graph_map[before_case].add(case_name)
                     else:
                         self.cases_graph_map[before_case] = {case_name, }
+                else:
+                    # 用例没有before_case 则归为 VIRTUAL_NODE 下
+                    if not self.cases_graph_map.get(VIRTUAL_NODE):
+                        self.cases_graph_map[VIRTUAL_NODE] = {case_name, }
+                    else:
+                        self.cases_graph_map[VIRTUAL_NODE].add(case_name)
 
                 self.cases_use_cache_dict[case_name] = CaseCacheMap(used=used_caches, generated=generated_caches,
                                                                     before_cases=case_value.before_cases)
@@ -109,6 +114,28 @@ class TestCaseAutomaticGeneration:
                         self.cases_graph_map[generated_case_name].add(used_case_name)
                     else:
                         self.cases_graph_map[generated_case_name] = {used_case_name, }
+
+        def select_cases_helper(cases_graph_map: dict[str, set[str]], select_cases: SelectCase):
+            """
+            cases_graph_map: 用例关系图
+            select_cases: 通过select_cases来过滤case，从而指定需要执行的case，而不是全部执行
+            """
+            # 1.将case_files和case_dirs转换为case_names
+            used_cases = set()
+            if select_cases:
+                for yaml_case in self.yaml_cases.keys():
+                    dir_name, file_name = yaml_case.split("_")
+                    if dir_name in select_cases.dir_names or file_name in select_cases.file_names:
+                        used_cases = used_cases.union(set(self.yaml_cases[yaml_case]))
+                used_cases = used_cases.union(set(select_cases.case_names))
+            # 2.过滤case_name,生产新的cases_graph_map
+            for case_name in used_cases:
+                if case_name in self.cases_graph_map.values():
+                    pass
+
+            return cases_graph_map
+
+        self.cases_graph_map = select_cases_helper(self.cases_graph_map, select_cases)
 
     def get_cases_graph_map(self):
         return self.cases_graph_map
