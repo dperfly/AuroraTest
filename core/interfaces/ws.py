@@ -1,6 +1,5 @@
 import asyncio
 import websockets
-
 from core.asserts.asserts import Asserts
 from core.log.logger import INFO, WARNING
 from core.models.model import Case
@@ -51,18 +50,28 @@ class WSRequest:
                 await self.send(message)
                 response = await self.receive()
                 self.response_rows.append(response)
-                # 检查是否满足停止条件
                 if stop_condition(response):
                     WARNING.logger.warning("Stop condition met. Closing connection.")
                     return
         finally:
             await self.close()
 
+    async def send_request_async(self, stop_condition):
+        """异步调用方式"""
+        await self.run(self.new_case.data.body, stop_condition)
+        return self.response_rows
+
     def send_request(self, stop_condition):
+        """兼容同步和异步调用的方式"""
+
         async def run():
             await self.run(self.new_case.data.body, stop_condition)
 
-        asyncio.run(run())
+        try:
+            loop = asyncio.get_running_loop()
+            loop.create_task(run())  # 异步环境，后台运行
+        except RuntimeError:
+            asyncio.run(run())  # 同步环境，直接运行
         return self.response_rows
 
     def should_continue(self):

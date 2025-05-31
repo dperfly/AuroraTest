@@ -38,3 +38,26 @@ caseName:
   before_case:
     - beforeCaseName
 ```
+
+# 快速运行
+
+```python
+import hook_func
+from core.case.runcase import AsyncRunCase
+from core.generate.reader import ReaderCase
+from core.cache.local_config import ConfigHandler
+
+# 读取case的目录
+raw_data = ReaderCase(folder_path="data").get_all_cases()
+
+# 读取配置的config文件
+config = ConfigHandler()
+config.init_config_cache("conf.yaml")
+
+# 钩子函数，用于在测试过程中执行
+hk = hook_func.HookFunc
+
+AsyncRunCase(raw_data=raw_data, cache=config.get_config_dict(),
+             hook_func=hk).run()
+
+```

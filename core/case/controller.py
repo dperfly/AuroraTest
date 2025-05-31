@@ -18,16 +18,17 @@ class CaseController:
         self.cache = cache
         self.func = func
 
-    def run_case(self):
+    async def __run_case_async(self):
+        """异步执行逻辑"""
         res = None
         api_type = self.new_case.inter_type.upper()
 
         # 这里进行不同类型的请求
         if InterType[api_type] == InterType.HTTP:
             res = HTTPRequest(new_case=self.new_case).send_request()
-        if InterType[api_type] == InterType.WS:
+        elif InterType[api_type] == InterType.WS:
             ws_client = WSRequest(new_case=self.new_case)
-            res = ws_client.send_request(ws_client.should_continue())
+            res = await ws_client.send_request_async(ws_client.should_continue())
         return asdict(RespData(request=self.new_case, response=res))
 
     def controller(self):
@@ -36,11 +37,12 @@ class CaseController:
             # 存在循环控制器
             @loop_control(self.new_case.plc, timeout=60, asserts=self.new_case.asserts)
             def run():
-                return self.run_case()
+                return self.__run_case_async()
 
             res = run()
         else:
-            res = self.run_case()
+            res = self.__run_case_async()
             Asserts.assert_response(res, self.new_case)
 
         Extracts.extracts_response(res, self.new_case)
+        return res
