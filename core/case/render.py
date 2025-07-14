@@ -1,6 +1,7 @@
 import json
 
 from dataclasses import asdict
+from typing import Callable
 
 from core.models.model import Case
 
@@ -19,7 +20,7 @@ class CaseRender:
     用于解析case中的参数化内容
     """
 
-    def __init__(self, case: Case, cache: dict, funcs: classmethod):
+    def __init__(self, case: Case, cache: dict, funcs: Callable):
         self.case = case
         self.cache = cache
         self.funcs = funcs

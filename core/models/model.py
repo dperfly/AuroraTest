@@ -125,6 +125,8 @@ class AllureAttachmentType(enum.Enum):
     WEBM = "webm"
     PDF = "pdf"
 
+# TODO 路径过于复杂，jsonpath写的不是很顺畅
+#  eg: $.response.data.data.accessToken.tokenValue 其中response.data 有些多余
 
 @dataclass
 class Response:

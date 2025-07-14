@@ -1,3 +1,4 @@
+from typing import Callable
 from core.case.render import CaseRender
 from core.interfaces.http import HTTPRequest
 from core.interfaces.ws import WSRequest
@@ -13,10 +14,14 @@ class CaseController:
     单个case根据inter_type进行执行的工厂方法
     """
 
-    def __init__(self, old_case: Case, cache: dict, func: classmethod):
-        self.new_case = CaseRender(old_case, cache, func).render()
+    def __init__(self, old_case: Case, cache: dict, func: Callable):
         self.cache = cache
         self.func = func
+        self.func.case = old_case
+        # before hook 对self.func.case进行操作
+        if hasattr(self.func, "before_case"):
+            self.func.before_case()
+        self.new_case = CaseRender(self.func.case, cache, func).render()
 
     async def __run_case_async(self):
         """异步执行逻辑"""
@@ -29,19 +34,23 @@ class CaseController:
         elif InterType[api_type] == InterType.WS:
             ws_client = WSRequest(new_case=self.new_case)
             res = await ws_client.send_request_async(ws_client.should_continue())
+
+        # after hook
+        if hasattr(self.func, "after_case"):
+            self.func.after_case()
+
         return asdict(RespData(request=self.new_case, response=res))
 
-    def controller(self):
-
+    async def controller(self):
         if self.new_case.plc:
             # 存在循环控制器
             @loop_control(self.new_case.plc, timeout=60, asserts=self.new_case.asserts)
-            def run():
-                return self.__run_case_async()
+            async def run():
+                return await self.__run_case_async()
 
-            res = run()
+            res = await run()
         else:
-            res = self.__run_case_async()
+            res = await self.__run_case_async()
             Asserts.assert_response(res, self.new_case)
 
         Extracts.extracts_response(res, self.new_case)

@@ -1,6 +1,7 @@
 import json
 
 from core.exceptions import ValueNotFoundError
+from core.log.logger import INFO
 
 _cache = {}
 
@@ -15,6 +16,7 @@ class CacheHandler:
 
     @staticmethod
     def update_cache(*, cache_name, value):
+        INFO.logger.info(f"add {cache_name} value {value}")
         _cache[cache_name] = value
 
     @staticmethod

@@ -15,13 +15,22 @@ class HTTPRequest:
         data_type = self.new_case.data.data_type
         body = self.new_case.data.body
         INFO.logger.info(self.new_case)
-        if data_type == DataType.JSON:
+        if data_type == DataType.JSON.value:
             body = body if body else {}
             response = requests.request(method, uri, json=body, headers=headers)
         else:
+            # TODO 需要优化不同的headers
+            if data_type == DataType.FORM.value:
+                headers["Content-Type"] = "application/x-www-form-urlencoded;charset=UTF-8"
             response = requests.request(method, uri, data=body, headers=headers)
         INFO.logger.info(f"response status code:{response.status_code}")
         INFO.logger.info(f"response text:{response.text}")
-        resp = Response(data=response.text, headers=dict(response.headers), status_code=response.status_code)
+        # 尝试解析JSON
+        try:
+            json_data = response.json()
+            data = json_data
+        except ValueError:
+            data = response.text
+        resp = Response(data=data, headers=dict(response.headers), status_code=response.status_code)
 
         return resp
