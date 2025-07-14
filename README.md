@@ -16,27 +16,56 @@ auto-verifyer 是一个轻量级、功能强大的接口自动化测试框架，
 # 用例结构定义
 
 ```yaml
-caseName:
-  plc: for _ in range(len(${cache.loopNum}))
+login:
   inter_type: http
   domain: ${cache._domain}
-  url: /login
+  url: /auth/oauth2/token
   method: POST
   headers:
-    token: ${cache._token}
+    tenantkey: ${cache._tenant}
+    authorization: ${cache._authorization}
   data:
-    data_type: text
-    body:
-      uuid: ${func.add(1,1)}
-      file: ${func.get_image('image.jpg')}
-  asserts:
-    status: resp$.status = 200
-    code: resp$.data.code = 0
+    data_type: FORM
+    body: grant_type=password&tenantKey=${cache._tenant}&username=${cache._username}&password=${func.hash_password(cache._password)}&captcha=
   extracts:
-    token: resp$.header.set_cookie.token
-    uuid: req$.data.uuid
-  before_case:
-    - beforeCaseName
+    token: $.response.data.data.accessToken.tokenValue
+```
+
+# HOOK_FUNC
+
+```python
+import base64
+from core.plc.hook_base import HookBase
+
+
+class HookFunc(HookBase):
+    case = None  # 这是当前正在执行的测试用例的参数信息，执行对其进行动态修改
+
+    @classmethod
+    def add_headers(cls):
+        # 对case中的header进行添加"key" 操作
+        cls.case.headers["key"] = "value"
+
+    @staticmethod
+    def hash_password(password: str) -> str:
+        # 这是一个简单的加密示例，可以在编写测试用例时通过 ${func.hash_password("your_password")} 进行引用
+        return base64.b64encode(password.encode("utf-8")).decode("utf-8")
+
+    @classmethod
+    def before_case(cls) -> None:
+        """
+        每个用例运行之前运行
+        """
+        # 对每一个测试用例均进行add_headers操作
+        HookFunc.add_headers()
+
+    @classmethod
+    def after_case(cls) -> None:
+        """
+        每个用例运行之后运行
+        """
+        pass
+
 ```
 
 # 快速运行

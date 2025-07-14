@@ -1,4 +1,5 @@
 import asyncio
+from core.plc import hook_base
 from core.case.controller import CaseController
 from core.generate.generate import TestCaseAutomaticGeneration
 from core.log.logger import INFO, ERROR
@@ -7,7 +8,10 @@ from core.log.logger import INFO, ERROR
 class AsyncRunCase:
     def __init__(self, raw_data, cache, hook_func):
         self.cache = cache
-        self.hook_func = hook_func
+        if isinstance(hook_func, type) and issubclass(hook_func, hook_base.HookBase):
+            self.hook_func = hook_func
+        else:
+            raise TypeError('hook_func must be a subclass of hook_base.HookBase')
         t_c_a_g = TestCaseAutomaticGeneration(raw_data)
         # 这里我们弄个桶模式，每一个桶从编号小到编号大逐个运行，同一个桶中的case支持并发运行，需要同一个桶中的case全部执行完成，再运行下一个桶的case
         self.barrels = t_c_a_g.get_case_runner_order()
@@ -29,6 +33,7 @@ class AsyncRunCase:
                     # 假设已实现异步版本的controller
                     await CaseController(old_case=case, cache=self.cache, func=self.hook_func).controller()
         except Exception as e:
+            raise e
             ERROR.logger.error(f"Case {case_name} failed: {str(e)}")
             # 可选：将错误信息存入self.cache供后续用例使用
             self.cache[f"{case_name}_error"] = str(e)
