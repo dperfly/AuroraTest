@@ -123,10 +123,10 @@ class HookFunc(HookBase):
 import hook_func
 from core.case.runcase import AsyncRunCase
 from core.generate.reader import ReaderCase
-from core.cache.local_config import ConfigHandler
+from core.cache.cache import ConfigHandler
 
 # 读取case的目录
-raw_data = ReaderCase(folder_path="data").get_all_cases()
+raw_data = ReaderCase(folder_path="testcase").get_all_cases()
 
 # 读取配置的config文件
 config = ConfigHandler()

@@ -33,7 +33,6 @@ class AsyncRunCase:
                     # 假设已实现异步版本的controller
                     await CaseController(old_case=case, cache=self.cache, func=self.hook_func).controller()
         except Exception as e:
-            raise e
             ERROR.logger.error(f"Case {case_name} failed: {str(e)}")
             # 可选：将错误信息存入self.cache供后续用例使用
             self.cache[f"{case_name}_error"] = str(e)

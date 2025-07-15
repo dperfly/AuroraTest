@@ -3,7 +3,7 @@ import re
 from typing import Any,Final
 import jsonpath
 
-from core.cache.local_cache import CacheHandler
+from core.cache.cache import CacheHandler
 from core.models.model import Case, InterType, EXTRACT_DELIMITER
 
 
@@ -58,6 +58,6 @@ class Extracts:
         for name, paths in case.extracts.items():
             if case.inter_type.upper() == InterType.HTTP.value or case.inter_type == InterType.WS.value:
                 value = extract_res(run_res, paths)
-                CacheHandler.update_cache(cache_name=name, value=value)
+                CacheHandler.update_cache(key=name, value=value)
             else:
                 raise TypeError("不支持的接口类型")

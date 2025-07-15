@@ -10,7 +10,7 @@ def root_path():
 
 def data_path():
     """ 获取数据路径 """
-    path = os.path.join(root_path(), "data")
+    path = os.path.join(root_path(), "testcase")
     if not os.path.exists(path):
         os.makedirs(path)
     return path
