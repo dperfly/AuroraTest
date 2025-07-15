@@ -17,6 +17,7 @@ AuroraTest 是一个轻量级、功能强大的接口自动化测试框架，专
 
 ```yaml
 login:
+  plc: for _ in range(3)
   inter_type: http
   domain: ${cache._domain}
   url: /auth/oauth2/token
@@ -32,6 +33,52 @@ login:
   asserts:
     eq_0: $.response.data.code
 ```
+### ASSERT
+#### (1) 支持的断言种类
+```python
+operator_dict = {
+    "eq": lambda x, y: str(x) == str(y),
+    "neq": lambda x, y: str(x) != str(y),
+    "in": lambda x, y: str(x) in str(y),
+    "notin": lambda x, y: str(x) not in str(y),
+    "gt": lambda x, y: int(y) > int(x),
+    "lt": lambda x, y: int(y) < int(x),
+    "gte": lambda x, y: int(y) >= int(x),
+    "lte": lambda x, y: int(y) <= int(x),
+    "isnull": lambda x, y: y is None,
+    "regex": lambda x, y: bool(re.search(x, str(y))),
+    "start": lambda x, y: str(y).startswith(str(x)),
+    "end": lambda x, y: str(y).endswith(str(x)),
+    "len": lambda x, y: int(x) == len(y),
+    "bool": lambda x, y: bool(y) == bool(x),
+}
+```
+#### (2) 断言写法
+__operator_export: extract__
+```yaml
+your_testcase:
+  ...
+  ...
+  asserts:
+    eq_0: $.response.data.code     # 判断字符串是否相等
+    gt_10: 提取器的路径    # 判断是否大于int 10
+    isnull: 提取器的路径   # isnull 不用添加额外的下划线
+    in_hello: 提取器的路径 # 判断字符串是否包含hello
+```
+
+### PLC 逻辑循环
+#### （1）目的
+某些测试用例的结果很可能不是实时返回结果的，这里可以进行循环断言，直到符合所有的断言结果或超出预期时间才结束循环，然后继续运行后面的测试用例
+#### （2）循环写法
+此处直接使用的python写法
+```yaml
+your_testcase:
+  ...
+  plc: for _ in range(10)  # 循环10次
+  plc: while True # 无限循环直到超时(60s)或者结果assert正确
+  ...
+```
+
 
 # HOOK_FUNC
 
@@ -68,37 +115,6 @@ class HookFunc(HookBase):
         """
         pass
 
-```
-# ASSERT
-### 断言字典
-```python
-operator_dict = {
-    "eq": lambda x, y: str(x) == str(y),
-    "neq": lambda x, y: str(x) != str(y),
-    "in": lambda x, y: str(x) in str(y),
-    "notin": lambda x, y: str(x) not in str(y),
-    "gt": lambda x, y: int(y) > int(x),
-    "lt": lambda x, y: int(y) < int(x),
-    "gte": lambda x, y: int(y) >= int(x),
-    "lte": lambda x, y: int(y) <= int(x),
-    "isnull": lambda x, y: y is None,
-    "regex": lambda x, y: bool(re.search(x, str(y))),
-    "start": lambda x, y: str(y).startswith(str(x)),
-    "end": lambda x, y: str(y).endswith(str(x)),
-    "len": lambda x, y: int(x) == len(y),
-    "bool": lambda x, y: bool(y) == bool(x),
-}
-```
-### 在测试用例中使用
-```yaml
-your_testcase:
-  ...
-  ...
-  asserts:
-    eq_0: 提取器的路径     # 判断字符串是否相等
-    gt_10: 提取器的路径    # 判断是否大于int 10
-    isnull: 提取器的路径   # isnull 不用添加额外的下划线
-    in_hello: 提取器的路径 # 判断字符串是否包含hello
 ```
 
 # 快速运行

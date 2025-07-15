@@ -7,6 +7,16 @@ from core.models.model import Case
 
 
 def loop_control(plc_str, timeout=None, case=None):
+    """
+    接受类似 "for _ in range(10)" 的字符串并动态执行，并添加超时时间
+
+    :param plc_str: 类似 "for _ in range(10)" 的字符串
+    :param timeout: 超时时间，单位为秒。如果设置为 None，则不限制时间。
+
+    while True :会根据断言结果进行判断是否需要进行循环，如果在timeout之前未断言成功则结束循环返回最后一次的执行结果
+    for : for循环不会进行结果判断，做指定次数的循环，然后返回最后一次的结果，希望用于”post“请求
+    TODO if : 暂不支持if分支语句
+    """
     def decorator(func):
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
