@@ -18,7 +18,7 @@ class CaseController:
         self.cache = cache
         self.func = func
         self.func.case = old_case
-        # before hook 对self.func.case进行操作
+        # before hook 对self.func.case进行操作,如果结合plc进行循环操作，只处理一次。
         if hasattr(self.func, "before_case"):
             self.func.before_case()
         self.new_case = CaseRender(self.func.case, cache, func).render()
@@ -35,16 +35,12 @@ class CaseController:
             ws_client = WSRequest(new_case=self.new_case)
             res = await ws_client.send_request_async(ws_client.should_continue())
 
-        # after hook
-        if hasattr(self.func, "after_case"):
-            self.func.after_case()
-
         return asdict(RespData(request=self.new_case, response=res))
 
     async def controller(self):
         if self.new_case.plc:
             # 存在循环控制器
-            @loop_control(self.new_case.plc, timeout=60, asserts=self.new_case.asserts)
+            @loop_control(self.new_case.plc, timeout=60, case=self.new_case)
             async def run():
                 return await self.__run_case_async()
 
@@ -52,6 +48,10 @@ class CaseController:
         else:
             res = await self.__run_case_async()
             Asserts.assert_response(res, self.new_case)
+
+        # after hook
+        if hasattr(self.func, "after_case"):
+            self.func.after_case()
 
         Extracts.extracts_response(res, self.new_case)
         return res

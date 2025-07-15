@@ -8,8 +8,8 @@ from core.extracts.extracts import extract_res
 class Asserts:
 
     @classmethod
-    def assert_response(cls, run_res, case: Case):
-
+    def assert_response(cls, run_res, case: Case) -> bool:
+        all_assert_res = True
         for exp, paths in case.asserts.items():
             if case.inter_type.upper() == InterType.HTTP.value or case.inter_type == InterType.WS.value:
                 # 进行结果提取
@@ -24,7 +24,7 @@ class Asserts:
             elif len(exp_list) == 1 and exp_list[1] == "isnull":
                 operator, expect_res = exp_list[0], None
             else:
-                ValueError(f"{exp} 中只能包含一个_或者无_,无下划线时只能用于isnull" )
+                raise ValueError(f"{exp} 中只能包含一个_或者无_,无下划线时只能用于isnull" )
 
             operator_dict = {
                 "eq": lambda x, y: str(x) == str(y),
@@ -52,6 +52,7 @@ class Asserts:
                     f"| Types: \033[36m{type(value).__name__}\033[0m vs \033[36m{type(expect_res).__name__}\033[0m"
                 )
             else:
+                all_assert_res = False
                 # TODO 断言失败后续需要做什么？
                 WARNING.logger.warning(
                     f"\033[31m✗ Assertion failed\033[0m: "
@@ -60,3 +61,4 @@ class Asserts:
                     f"Expected: {expect_res} (\033[33m{type(expect_res).__name__}\033[0m) "
                     f"| Types: \033[36m{type(value).__name__}\033[0m vs \033[36m{type(expect_res).__name__}\033[0m"
                 )
+        return all_assert_res
