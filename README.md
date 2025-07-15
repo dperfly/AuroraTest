@@ -12,7 +12,7 @@ AuroraTest 是一个轻量级、功能强大的接口自动化测试框架，专
 6. 将http、ws、sql、redis等定义为测试步骤，而不是前置后置条件
 7. 支持失败用例，终止对应的测试流程，后续流程跳过
 8. 更好的协议扩展性
-
+    
 # 用例结构定义
 
 ```yaml
@@ -29,6 +29,8 @@ login:
     body: grant_type=password&tenantKey=${cache._tenant}&username=${cache._username}&password=${func.hash_password(cache._password)}&captcha=
   extracts:
     token: $.response.data.data.accessToken.tokenValue
+  asserts:
+    eq_0: $.response.data.code
 ```
 
 # HOOK_FUNC
@@ -66,6 +68,37 @@ class HookFunc(HookBase):
         """
         pass
 
+```
+# ASSERT
+### 断言字典
+```python
+operator_dict = {
+    "eq": lambda x, y: str(x) == str(y),
+    "neq": lambda x, y: str(x) != str(y),
+    "in": lambda x, y: str(x) in str(y),
+    "notin": lambda x, y: str(x) not in str(y),
+    "gt": lambda x, y: int(y) > int(x),
+    "lt": lambda x, y: int(y) < int(x),
+    "gte": lambda x, y: int(y) >= int(x),
+    "lte": lambda x, y: int(y) <= int(x),
+    "isnull": lambda x, y: y is None,
+    "regex": lambda x, y: bool(re.search(x, str(y))),
+    "start": lambda x, y: str(y).startswith(str(x)),
+    "end": lambda x, y: str(y).endswith(str(x)),
+    "len": lambda x, y: int(x) == len(y),
+    "bool": lambda x, y: bool(y) == bool(x),
+}
+```
+### 在测试用例中使用
+```yaml
+your_testcase:
+  ...
+  ...
+  asserts:
+    eq_0: 提取器的路径     # 判断字符串是否相等
+    gt_10: 提取器的路径    # 判断是否大于int 10
+    isnull: 提取器的路径   # isnull 不用添加额外的下划线
+    in_hello: 提取器的路径 # 判断字符串是否包含hello
 ```
 
 # 快速运行
