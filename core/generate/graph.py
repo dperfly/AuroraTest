@@ -6,7 +6,7 @@ import random
 
 from core.generate.generate import TestCaseAutomaticGeneration
 from core.generate.reader import ReaderCase
-from core.models.model import VIRTUAL_NODE
+from core.model import VIRTUAL_NODE
 from core.utils.path import data_path
 
 

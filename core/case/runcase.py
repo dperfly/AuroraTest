@@ -1,8 +1,8 @@
 import asyncio
-from core.plc import hook_base
+from core import hook_base
 from core.case.controller import CaseController
 from core.generate.generate import TestCaseAutomaticGeneration
-from core.log.logger import INFO, ERROR
+from core.logger import INFO, ERROR
 
 
 class AsyncRunCase:

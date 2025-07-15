@@ -1,9 +1,9 @@
 import asyncio
 import functools
 
-from core.asserts.asserts import Asserts
-from core.exceptions import IFException, WhileException
-from core.models.model import Case
+from core.asserts import Asserts
+from core.exception import IFException, WhileException
+from core.model import Case
 
 
 def loop_control(plc_str, timeout=None, case=None):

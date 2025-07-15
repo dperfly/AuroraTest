@@ -1,10 +1,10 @@
 import json
 import re
-from typing import Any,Final
+from typing import Any
 import jsonpath
 
-from core.cache.cache import CacheHandler
-from core.models.model import Case, InterType, EXTRACT_DELIMITER
+from core.cache import CacheHandler
+from core.model import Case, InterType, EXTRACT_DELIMITER
 
 
 def regex(result, regex_pattern) -> Any:

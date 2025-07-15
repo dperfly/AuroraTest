@@ -1,8 +1,8 @@
 import asyncio
 import websockets
-from core.asserts.asserts import Asserts
-from core.log.logger import INFO, WARNING
-from core.models.model import Case
+from core.asserts import Asserts
+from core.logger import INFO, WARNING
+from core.model import Case
 
 
 class WSRequest:

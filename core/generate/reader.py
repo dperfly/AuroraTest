@@ -5,8 +5,8 @@ import yaml
 from typing import Dict, List
 from dacite import from_dict
 
-from core.models.model import Case, Data
-from core.exceptions import DuplicateCaseError
+from core.model import Case
+from core.exception import DuplicateCaseError
 
 
 class ReaderCase:

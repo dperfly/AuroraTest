@@ -8,9 +8,9 @@ from dacite import from_dict
 from mako.template import Template
 from dataclasses import asdict, dataclass
 
-from core.exceptions import GenerateCaseError
+from core.exception import GenerateCaseError
 from core.generate.reader import ReaderCase
-from core.models.model import Case, SelectCase, VIRTUAL_NODE
+from core.model import Case, SelectCase, VIRTUAL_NODE
 from core.utils.path import data_path
 
 

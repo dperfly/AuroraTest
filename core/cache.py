@@ -1,7 +1,7 @@
 import yaml
 
-from core.log.logger import INFO
-from core.exceptions import ValueNotFoundError
+from core.logger import INFO
+from core.exception import ValueNotFoundError
 
 _cache = {}
 

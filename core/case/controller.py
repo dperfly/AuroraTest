@@ -2,10 +2,10 @@ from typing import Callable
 from core.case.render import CaseRender
 from core.interfaces.http import HTTPRequest
 from core.interfaces.ws import WSRequest
-from core.models.model import Case, InterType, RespData
-from core.plc.plc import loop_control
-from core.asserts.asserts import Asserts
-from core.extracts.extracts import Extracts
+from core.model import Case, InterType, RespData
+from core.plc import loop_control
+from core.asserts import Asserts
+from core.extracts import Extracts
 from dataclasses import asdict
 
 

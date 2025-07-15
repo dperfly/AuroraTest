@@ -3,7 +3,7 @@ import json
 from dataclasses import asdict
 from typing import Callable
 
-from core.models.model import Case
+from core.model import Case
 
 from mako.template import Template
 from dacite import from_dict

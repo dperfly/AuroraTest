@@ -1,8 +1,8 @@
 import re
 
-from core.log.logger import INFO, WARNING
-from core.models.model import Case, InterType
-from core.extracts.extracts import extract_res
+from core.logger import INFO, WARNING
+from core.model import Case, InterType
+from core.extracts import extract_res
 
 
 class Asserts:

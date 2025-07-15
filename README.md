@@ -84,7 +84,7 @@ your_testcase:
 
 ```python
 import base64
-from core.plc.hook_base import HookBase
+from core.hook_base import HookBase
 
 
 class HookFunc(HookBase):
@@ -123,7 +123,7 @@ class HookFunc(HookBase):
 import hook_func
 from core.case.runcase import AsyncRunCase
 from core.generate.reader import ReaderCase
-from core.cache.cache import ConfigHandler
+from core.cache import ConfigHandler
 
 # 读取case的目录
 raw_data = ReaderCase(folder_path="testcase").get_all_cases()

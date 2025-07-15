@@ -1,5 +1,5 @@
-from core.log.logger import INFO
-from core.models.model import Case, DataType, Response
+from core.logger import INFO
+from core.model import Case, DataType, Response
 
 import requests
 

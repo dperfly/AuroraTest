@@ -1,4 +1,4 @@
-from core.models.model import Case
+from core.model import Case
 
 
 class HookBase:
