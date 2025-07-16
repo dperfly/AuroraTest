@@ -139,3 +139,20 @@ AsyncRunCase(raw_data=raw_data, cache=config.get_config_dict(),
              hook_func=hk).run()
 
 ```
+
+# 查看用例关系
+
+```python
+from core.generate.generate import TestCaseAutomaticGeneration
+from core.generate.graph import HtmlGraph
+from core.generate.reader import ReaderCase
+from core.utils.path import data_path
+
+raw_data = ReaderCase(data_path("testcase")).get_all_cases()
+t = TestCaseAutomaticGeneration(raw_data)
+nodes = t.get_all_case_name()
+edges = t.get_all_edges()
+all_cases = t.get_all_cases()
+HtmlGraph(nodes, edges, all_cases).run_server()
+```
+![img.png](.resources/img/graph.png)

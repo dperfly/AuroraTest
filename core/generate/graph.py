@@ -1,3 +1,5 @@
+import json
+
 import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output
@@ -6,7 +8,7 @@ import random
 
 from core.generate.generate import TestCaseAutomaticGeneration
 from core.generate.reader import ReaderCase
-from core.model import VIRTUAL_NODE
+from core.model import VIRTUAL_NODE, Case
 from core.utils.path import data_path
 
 
@@ -17,7 +19,7 @@ class HtmlGraph:
 
     # 随机生成节点的坐标
     @staticmethod
-    def generate_random_coordinates(nodes, x_range=(0.15, 3.85), y_range=(0.15, 3.85)):
+    def generate_random_coordinates(nodes, x_range=(1.15, 2.85), y_range=(1.15, 2.85)):
         return {node: (random.uniform(*x_range), random.uniform(*y_range)) for node in nodes}
 
     def __init__(self, nodes, edges, cases):
@@ -97,37 +99,40 @@ class HtmlGraph:
     def __html_layout(self):
         self.app.layout = html.Div([
             html.Div([
-                html.Div([
-                    dcc.Graph(
-                        id='graph',
-                        figure=self.__create_figure(),
-                        style={'width': '100%', 'height': '100%'}
-                    )
-                ], className="el-card", style={'width': '67%', 'height': '100%', 'padding': '20px'}),  # 右侧区域，占 67% 宽度
+
                 html.Div([
                     # 下拉框部分
                     html.Div(
                         dcc.Dropdown(
                             id='node-dropdown',
                             options=[{'label': node, 'value': node} for node in self.nodes],
-                            placeholder="选择一个节点",
+                            placeholder="筛选节点",
                             style={'width': '100%', 'margin': 'auto'}
                         ),
                         className="el-form-item",  # 使用 ElementUI 表单样式
                         style={'margin-bottom': '30px'}
                     ),
-
+                    dcc.Graph(
+                        id='graph',
+                        figure=self.__create_figure(),
+                        style={'width': '100%', 'height': '100%'}
+                    )
+                ], className="el-card",
+                    style={'width': '50%', 'padding': '20px'}),
+                html.Div([
                     # 节点信息展示部分
                     html.Div([
                         # html.H3("节点信息：", className="el-card__header", style={'text-align': 'center'}),
                         dcc.Markdown(id='node-info', className="el-card__body",
-                                     style={'padding': '20px', 'font-size': '16px'})
+                                     style={'padding': '20px', 'font-size': '16px', 'white-space': 'pre-wrap',
+                                            'word-wrap': 'break-word', 'overflow-wrap': 'break-word'})
+
                     ], className="el-card",
-                        style={'width': '90%', 'height': '400px', 'overflowY': 'auto', 'border-top': '1px solid black',
+                        style={'width': '90%', 'height': '100%', 'overflowY': 'auto',
                                'margin': 'auto'})
 
-                ], style={'width': '33%', 'padding': '20px', 'border-right': '1px solid #ccc'}),  # 左侧区域，占 33% 宽度
-            ], style={'display': 'flex', 'flex-direction': 'row', 'width': '100%', 'height': '100vh'})
+                ], style={'width': '50%', 'padding': '20px', 'border-right': '1px solid #ccc'}),
+            ], style={'display': 'flex', 'flex-direction': 'row', 'width': '100%', 'height': '90vh'})
             # 使用 Flexbox 实现左右结构
         ])
 
@@ -145,13 +150,22 @@ class HtmlGraph:
                 # 找到所有能到达被点击节点的父节点和祖先节点
                 ancestors = self.__find_ancestors(clicked_node)
                 ancestors.add(clicked_node)  # 包括被点击的节点
-
+                case: Case = self.cases.get(clicked_node)
                 # 生成节点的详细信息
-                node_info = f"#### 节点名称: {clicked_node}\n" \
-                            f"#### 坐标: {self.node_positions[clicked_node]}\n" \
-                            f"#### 祖先节点: {', '.join(ancestors - {clicked_node})}\n\n" \
-                            f"{str(self.cases.get(clicked_node))}"
+                node_info = f"#### 节点名称:{clicked_node}\n" \
+                            f"#### 祖先节点:{', '.join(ancestors - {clicked_node})}\n\n" \
+                            f"#### 节点信息:\n" \
+                            f"##### inter_type:{case.inter_type}\n" \
+                            f"##### domain:     \t{case.domain}\n" \
+                            f"##### url:        \t{case.url}\n" \
+                            f"##### method:     \t{case.method}\n" \
+                            f"##### headers:    \t{case.headers}\n" \
+                            f"##### data:       \t{case.data.data_type}|{case.data.body}\n" \
+                            f"##### plc:        \t{case.plc}\n" \
+                            f"##### extracts:   \t{case.extracts}\n" \
+                            f"##### asserts:    \t{case.asserts}\n"
 
+                print(node_info)
                 # 重新绘制图形并仅显示祖先节点和被点击节点
                 return self.__create_figure(show_nodes=ancestors, highlight_nodes=ancestors), node_info
 
@@ -160,13 +174,20 @@ class HtmlGraph:
                 # 找到所有与点击节点相关的节点
                 ancestors = self.__find_ancestors(clicked_node)
                 ancestors.add(clicked_node)  # 包括被点击的节点
-
+                case: Case = self.cases.get(clicked_node)
                 # 生成节点的详细信息
-                node_info = f"#### 节点名称: {clicked_node}\n" \
-                            f"#### 坐标: {self.node_positions[clicked_node]}\n" \
-                            f"#### 相关节点: {', '.join(ancestors)}\n\n" \
-                            f"{str(self.cases.get(clicked_node))}"
-
+                node_info = f"#### 节点名称:{clicked_node}\n" \
+                            f"#### 祖先节点:{', '.join(ancestors - {clicked_node})}\n\n" \
+                            f"#### 节点信息:\n" \
+                            f"##### inter_type:{case.inter_type}\n" \
+                            f"##### domain:     \t{case.domain}\n" \
+                            f"##### url:        \t{case.url}\n" \
+                            f"##### method:     \t{case.method}\n" \
+                            f"##### headers:    \t{case.headers}\n" \
+                            f"##### data:       \t{case.data.data_type}|{case.data.body}\n" \
+                            f"##### plc:        \t{case.plc}\n" \
+                            f"##### extracts:   \t{case.extracts}\n" \
+                            f"##### asserts:    \t{case.asserts}\n"
                 # 高亮显示相关节点，但不隐藏其他节点
                 return self.__create_figure(highlight_nodes=ancestors), node_info
 
@@ -180,7 +201,7 @@ class HtmlGraph:
 
 
 if __name__ == '__main__':
-    raw_data = ReaderCase(data_path()).get_all_cases()
+    raw_data = ReaderCase(data_path("testcase")).get_all_cases()
     t = TestCaseAutomaticGeneration(raw_data)
     nodes = t.get_all_case_name()
     edges = t.get_all_edges()

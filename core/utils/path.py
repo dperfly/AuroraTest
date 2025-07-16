@@ -8,9 +8,9 @@ def root_path():
     return path
 
 
-def data_path():
+def data_path(case_folder_name):
     """ 获取数据路径 """
-    path = os.path.join(root_path(), "testcase")
+    path = os.path.join(root_path(), case_folder_name)
     if not os.path.exists(path):
         os.makedirs(path)
     return path
