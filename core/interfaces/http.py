@@ -1,4 +1,6 @@
-from core.logger import INFO
+import json
+
+from core.logger import INFO, ERROR
 from core.model import Case, DataType, Response
 
 import requests
@@ -16,7 +18,12 @@ class HTTPRequest:
         body = self.new_case.data.body
         INFO.logger.info(self.new_case)
         if data_type == DataType.JSON.value:
-            body = body if body else {}
+            # 如果是字符串则尝试转换成字典
+            try:
+                if isinstance(body, str):
+                    body = json.loads(body)
+            except json.decoder.JSONDecodeError:
+                ERROR.logger.error(f"JSONDecodeError: {body}")
             response = requests.request(method, uri, json=body, headers=headers)
         else:
             # TODO 需要优化不同的headers
