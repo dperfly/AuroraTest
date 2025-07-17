@@ -156,3 +156,6 @@ all_cases = t.get_all_cases()
 HtmlGraph(nodes, edges, all_cases).run_server()
 ```
 ![img.png](.resources/img/graph.png)
+
+# 生成测试报告
+![img.png](.resources/img/html_report.png)
