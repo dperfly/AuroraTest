@@ -1,4 +1,3 @@
-allure-pytest==2.13.5
 colorlog==6.9.0
 dacite==1.8.1
 dash==2.18.2

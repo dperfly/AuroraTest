@@ -2,7 +2,7 @@ from typing import Dict
 
 from jsonpath import jsonpath
 
-from core.exceptions import ValueNotFoundError
+from core.exception import ValueNotFoundError
 
 
 def jsonpath_plus(obj: Dict, expr: str):
