@@ -153,6 +153,7 @@ class HtmlGraph:
                 case: Case = self.cases.get(clicked_node)
                 # 生成节点的详细信息
                 node_info = f"#### 节点名称:{clicked_node}\n" \
+                            f"#### 描述信息:{case.desc}\n" \
                             f"#### 祖先节点:{', '.join(ancestors - {clicked_node})}\n\n" \
                             f"#### 节点信息:\n" \
                             f"##### inter_type:{case.inter_type}\n" \
@@ -177,6 +178,7 @@ class HtmlGraph:
                 case: Case = self.cases.get(clicked_node)
                 # 生成节点的详细信息
                 node_info = f"#### 节点名称:{clicked_node}\n" \
+                            f"#### 描述信息:{case.desc}\n" \
                             f"#### 祖先节点:{', '.join(ancestors - {clicked_node})}\n\n" \
                             f"#### 节点信息:\n" \
                             f"##### inter_type:{case.inter_type}\n" \

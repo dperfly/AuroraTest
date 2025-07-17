@@ -61,6 +61,7 @@ class Data:
 
 @dataclass
 class Case:
+    desc: str = ""
     plc: Union[str, None] = None
     inter_type: str = "HTTP"
     domain: str = None
@@ -78,6 +79,7 @@ class Case:
         asserts = [f"{k}:{v}" for k, v in self.asserts.items()]
         res = f"""                                                              
 |---------------|-------------------------------------------------------------------
+| desc          | {self.desc}  
 | domain        | {self.domain}                                                     
 | url           | {self.url}                                                        
 | method        | {self.method}                                                     
