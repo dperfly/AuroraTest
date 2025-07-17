@@ -1,11 +1,15 @@
 import enum
 from dataclasses import dataclass, field
-from typing import Union, List, Dict, Any, Text, Optional, Final
+from typing import Union, List, Dict, Any, Final
+from pydantic import BaseModel
+
+from core.logger import now_time_day
 
 # 虚拟节点，即所有用例的根
 VIRTUAL_NODE: Final = "_"
 EXTRACT_DELIMITER: Final[str] = "->"
-INIT_CACHE : Final[str] = "init_cache"
+INIT_CACHE: Final[str] = "init_cache"
+
 
 class InterType(enum.Enum):
     HTTP = "HTTP"
@@ -93,41 +97,6 @@ class Case:
         return res
 
 
-@dataclass
-class TestMetrics:
-    """ 用例执行数据 """
-    passed: int
-    failed: int
-    broken: int
-    skipped: int
-    total: int
-    pass_rate: float
-    time: Text
-
-
-@enum.unique
-class AllureAttachmentType(enum.Enum):
-    """allure 文件类型"""
-    TEXT = "txt"
-    CSV = "csv"
-    TSV = "tsv"
-    URI_LIST = "uri"
-    HTML = "html"
-    XML = "xml"
-    JSON = "json"
-    YAML = "yaml"
-    PCAP = "pcap"
-    PNG = "png"
-    JPG = "jpg"
-    SVG = "svg"
-    GIF = "gif"
-    BMP = "bmp"
-    TIFF = "tiff"
-    MP4 = "mp4"
-    OGG = "ogg"
-    WEBM = "webm"
-    PDF = "pdf"
-
 # TODO 路径过于复杂，jsonpath写的不是很顺畅
 #  eg: $.response.data.data.accessToken.tokenValue 其中response.data 有些多余
 
@@ -150,3 +119,58 @@ class SelectCase:
     case_names: List[str] = field(default_factory=lambda: [])
     file_names: List[str] = field(default_factory=lambda: [])
     dir_names: List[str] = field(default_factory=lambda: [])
+
+
+# 测试报告相关数据结构
+# ReportParam ReportHeader ReportLogEntry ReportAssertion TestCaseRunResult TestSummary TestReport
+class ReportParam(BaseModel):
+    name: str = None
+    value: Union[str, int, float, bool, dict, list] = None
+    type: str = None
+    required: bool = None
+
+
+class ReportHeader(BaseModel):
+    name: str = None
+    value: str = None
+
+
+class ReportLogEntry(BaseModel):
+    time: str = None
+    level: str = None  # 'info', 'error', 'warning'
+    message: str = None
+
+
+class ReportAssertion(BaseModel):
+    name: str = None
+    passed: bool = False
+    message: str = None
+
+
+class TestCaseRunResult(BaseModel):
+    case_id: str = None
+    name: str = None
+    group: str = '未分组'
+    api_name: str = None
+    url: str = None
+    method: str = None  # 'get', 'post', 'put', 'delete', etc.
+    status: str = 'passed'  # 'passed', 'failed', 'skipped'
+    params: List[ReportParam] = field(default_factory=lambda: [])
+    headers: List[ReportHeader] = field(default_factory=lambda: [])
+    logs: List[ReportLogEntry] = field(default_factory=lambda: [])
+    request: Any = None
+    response: Any = None
+    assertions: List[ReportAssertion] = field(default_factory=lambda: [])
+
+
+class TestSummary(BaseModel):
+    total: int = 0
+    passed: int = 0
+    failed: int = 0
+    skipped: int = 0
+
+
+class TestReport(BaseModel):
+    start_time: str = None
+    summary: TestSummary = field(default_factory=TestSummary)
+    test_cases: List[TestCaseRunResult] = field(default_factory=lambda: [])

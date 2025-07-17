@@ -1,14 +1,14 @@
 import re
 
 from core.logger import INFO, WARNING
-from core.model import Case, InterType
+from core.model import Case, InterType, TestCaseRunResult, ReportAssertion
 from core.extracts import extract_res
 
 
 class Asserts:
 
     @classmethod
-    def assert_response(cls, run_res, case: Case) -> bool:
+    def assert_response(cls, run_res, case: Case,test_run_result:TestCaseRunResult) -> bool:
         all_assert_res = True
         for exp, paths in case.asserts.items():
             if case.inter_type.upper() == InterType.HTTP.value or case.inter_type == InterType.WS.value:
@@ -44,6 +44,9 @@ class Asserts:
             }
 
             if operator_dict[operator](expect_res, value):
+                test_run_result.assertions.append(
+                    ReportAssertion(name=f"{paths}_{exp}",passed=True,message=f"Expected: {expect_res} Actual: {value}")
+                )
                 INFO.logger.info(
                     f"\033[32m✓ Assertion passed\033[0m: "
                     f"Actual: {value} (\033[33m{type(value).__name__}\033[0m) "
@@ -52,8 +55,11 @@ class Asserts:
                     f"| Types: \033[36m{type(value).__name__}\033[0m vs \033[36m{type(expect_res).__name__}\033[0m"
                 )
             else:
-                all_assert_res = False
                 # TODO 断言失败后续需要做什么？
+                all_assert_res = False
+                test_run_result.assertions.append(
+                    ReportAssertion(name=f"{paths}_{exp}",passed=False,message=f"Expected: {expect_res} Actual: {value}")
+                )
                 WARNING.logger.warning(
                     f"\033[31m✗ Assertion failed\033[0m: "
                     f"Actual: {value} (\033[33m{type(value).__name__}\033[0m) "

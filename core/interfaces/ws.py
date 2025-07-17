@@ -2,11 +2,11 @@ import asyncio
 import websockets
 from core.asserts import Asserts
 from core.logger import INFO, WARNING
-from core.model import Case
+from core.model import Case, TestCaseRunResult
 
 
 class WSRequest:
-    def __init__(self, new_case: Case):
+    def __init__(self, new_case: Case, test_run_result: TestCaseRunResult):
         self.new_case = new_case
         self.uri = self.new_case.domain + self.new_case.url
         self.websocket = None

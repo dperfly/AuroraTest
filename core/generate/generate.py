@@ -73,6 +73,8 @@ class TestCaseAutomaticGeneration:
         self.cases_graph_map: dict[str, set[str]] = {}
         # 所有 case 字典
         self.all_case_map: dict[str, Case] = {}
+        # caseName 对应的文件
+        self.cases_file_group: Dict[str, str] = {}
 
         for file_ab_path, file_cases in self.raw_data.items():
             # 获取到fileName和caseName 的map关系
@@ -84,6 +86,7 @@ class TestCaseAutomaticGeneration:
             for case_name, case_value in file_cases.items():
                 # 添加到all_case_map
                 self.all_case_map[case_name] = case_value
+                self.cases_file_group[case_name] = dir_name
                 # 拿到所有case中使用缓存的名字和生成缓存的名字
                 used_caches = ReaderCase.get_cache_name(str(case_value))
                 generated_caches = list(case_value.extracts.keys())
@@ -204,3 +207,6 @@ class TestCaseAutomaticGeneration:
             for k, v in cases.items():
                 res[k] = v
         return res
+
+    def get_case_group(self, case_name):
+        return self.cases_file_group.get(case_name,"未分组")
