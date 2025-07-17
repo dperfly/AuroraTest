@@ -5,6 +5,7 @@ from typing import Union, List, Dict, Any, Text, Optional, Final
 # 虚拟节点，即所有用例的根
 VIRTUAL_NODE: Final = "_"
 EXTRACT_DELIMITER: Final[str] = "->"
+INIT_CACHE : Final[str] = "init_cache"
 
 class InterType(enum.Enum):
     HTTP = "HTTP"
