@@ -200,12 +200,3 @@ class HtmlGraph:
         self.__html_layout()
         self.__update_figure()
         return self.app.run(debug=debug)
-
-
-if __name__ == '__main__':
-    raw_data = ReaderCase(data_path("testcase")).get_all_cases()
-    t = TestCaseAutomaticGeneration(raw_data)
-    nodes = t.get_all_case_name()
-    edges = t.get_all_edges()
-    all_cases = t.get_all_cases()
-    HtmlGraph(nodes, edges, all_cases).run_server()

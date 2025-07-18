@@ -118,27 +118,42 @@ class TestCaseAutomaticGeneration:
                     else:
                         self.cases_graph_map[generated_case_name] = {used_case_name, }
 
-        def select_cases_helper(cases_graph_map: dict[str, set[str]], select_cases: SelectCase):
+        # 过滤需要执行的case
+        def select_cases_helper(cases_graph_map: dict[str, set[str]]):
             """
             cases_graph_map: 用例关系图
-            select_cases: 通过select_cases来过滤case，从而指定需要执行的case，而不是全部执行
+            通过select_cases来过滤case，从而指定需要执行的case，而不是全部执行
             """
-            # 1.将case_files和case_dirs转换为case_names
+            # 1.将case_files和case_dirs转换为case_names 并添加到used_cases中
             used_cases = set()
             if select_cases:
                 for yaml_case in self.yaml_cases.keys():
-                    dir_name, file_name = yaml_case.split("_")
+                    dir_name, file_name = yaml_case.split("_")[0], str.join("_", yaml_case.split("_")[1:])
                     if dir_name in select_cases.dir_names or file_name in select_cases.file_names:
                         used_cases = used_cases.union(set(self.yaml_cases[yaml_case]))
                 used_cases = used_cases.union(set(select_cases.case_names))
             # 2.过滤case_name,生产新的cases_graph_map
-            for case_name in used_cases:
-                if case_name in self.cases_graph_map.values():
-                    pass
+            new_cases_graph_map = {}
 
-            return cases_graph_map
+            while used_cases:
+                next_cases = set()
+                for k, v in cases_graph_map.items():
 
-        self.cases_graph_map = select_cases_helper(self.cases_graph_map, select_cases)
+                    for used_case in used_cases:
+                        if used_case == VIRTUAL_NODE:
+                            continue
+                        if used_case in v:
+                            if new_cases_graph_map.get(k):
+                                new_cases_graph_map[k].add(used_case)
+                            else:
+                                new_cases_graph_map[k] = {used_case,}
+                            # 添加本轮所有的父节点，下一轮继续使用
+                            next_cases.add(k)
+                used_cases = next_cases
+            return new_cases_graph_map if new_cases_graph_map else cases_graph_map
+
+        self.cases_graph_map = select_cases_helper(self.cases_graph_map)
+
 
     def get_cases_graph_map(self):
         return self.cases_graph_map

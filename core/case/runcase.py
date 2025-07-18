@@ -7,17 +7,17 @@ from core.case.controller import CaseController
 from core.generate.generate import TestCaseAutomaticGeneration
 from core.html_report import CompactHTMLTestReportGenerator
 from core.logger import INFO, ERROR
-from core.model import TestReport, TestCaseRunResult, VIRTUAL_NODE
+from core.model import TestReport, TestCaseRunResult, VIRTUAL_NODE, SelectCase
 
 
 class AsyncRunCase:
-    def __init__(self, raw_data, cache, hook_func):
+    def __init__(self, raw_data, cache, hook_func,select_cases:SelectCase = None):
         self.cache = cache
         if isinstance(hook_func, type) and issubclass(hook_func, hook_base.HookBase):
             self.hook_func = hook_func
         else:
             raise TypeError('hook_func must be a subclass of hook_base.HookBase')
-        self.t_c_a_g = TestCaseAutomaticGeneration(raw_data)
+        self.t_c_a_g = TestCaseAutomaticGeneration(raw_data,select_cases)
         # 这里我们弄个桶模式，每一个桶从编号小到编号大逐个运行，同一个桶中的case支持并发运行，需要同一个桶中的case全部执行完成，再运行下一个桶的case
         self.barrels = self.t_c_a_g.get_case_runner_order()
         INFO.logger.info(f"Barrels:{self.barrels.items()}")
