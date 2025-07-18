@@ -28,6 +28,14 @@ def ex(resp, json_path, regex_pattern=None) -> Any:
     Returns:
         提取后的数据（可能经过正则过滤）。
     """
+    # 如果不是request或者response则默认为$.response.data路径下的数据，可能存在问题：
+    # 如果返回的response的结果为：
+    #       {"response":{"data":"hello"}}
+    # 这样就必须使用复杂形式的 $.response.data.response.data，否则无法匹配，这种情况的概率太低了。
+    # TODO 如果存在这种问题，可以把简化形式改为 $$.response.data 用双$代表简易写法，目前没这样实现。
+    if not json_path.startswith("$.response.data") and not json_path.startswith("$.request.data"):
+        json_path = json_path.replace("$", "$.response.data")
+
     res = jsonpath.jsonpath(json.loads(json.dumps(resp)), json_path)
     if res:
         res = res[0] if len(res) == 1 else res
