@@ -1,12 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: UTF-8 -*-
-"""
-@Project ：Zeta_Byte_Network_Security_Interface 
-@File    ：clean_files.py
-@IDE     ：PyCharm 
-@Author  ：萌新小缘
-@Date    ：2024/6/13 14:06 
-"""
 import os
 
 
