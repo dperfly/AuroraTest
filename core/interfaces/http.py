@@ -1,9 +1,7 @@
 import json
-from datetime import datetime
 
-from core.logger import INFO, ERROR
-from core.model import Case, DataType, Response, ContentType, TestCaseRunResult, ReportHeader, \
-    ReportLogEntry
+from core.logger import info_log, error_log
+from core.model import Case, DataType, Response, ContentType, TestCaseRunResult, ReportHeader
 
 import requests
 
@@ -19,28 +17,22 @@ class HTTPRequest:
         headers = self.new_case.headers
         data_type = self.new_case.data.data_type
         body = self.new_case.data.body
-        INFO.logger.info(self.new_case)
+        info_log(self.new_case, self.test_run_result)
         if data_type == DataType.JSON.value:
             # 如果是字符串则尝试转换成字典
             try:
                 if isinstance(body, str):
                     body = json.loads(body)
             except json.decoder.JSONDecodeError:
-                ERROR.logger.error(f"JSONDecodeError: {body}")
+                error_log(f"JSONDecodeError: {body}",test_run_result=self.test_run_result)
             response = requests.request(method, uri, json=body, headers=headers)
         else:
             # TODO 需要优化不同的headers
             if data_type == DataType.FORM.value:
                 headers["Content-Type"] = ContentType.APPLICATION_FORM_URLENCODED.value
             response = requests.request(method, uri, data=body, headers=headers)
-        INFO.logger.info(f"response status code:{response.status_code}")
-        INFO.logger.info(f"response text:{response.text}")
-        self.test_run_result.logs.append(
-            ReportLogEntry(time=datetime.now().isoformat(), level='info', message=f"response status code:{response.status_code}")
-        )
-        self.test_run_result.logs.append(
-            ReportLogEntry(time=datetime.now().isoformat(), level='info', message=f"response text:{response.text}")
-        )
+        info_log(f"response status code:{response.status_code}", self.test_run_result)
+        info_log(f"response text:{response.text}", self.test_run_result)
         # 尝试解析JSON
         try:
             json_data = response.json()

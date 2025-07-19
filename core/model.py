@@ -3,7 +3,6 @@ from dataclasses import dataclass, field
 from typing import Union, List, Dict, Any, Final
 from pydantic import BaseModel
 
-from core.logger import now_time_day
 
 # 虚拟节点，即所有用例的根
 VIRTUAL_NODE: Final = "_"

@@ -651,16 +651,33 @@ class CompactHTMLTestReportGenerator:
                 'warning': 'log-level-warning'
             }.get(log.get('level', 'info'), 'log-level-info')
 
+            # 处理消息中的换行符
+            message = log.get('message', '').replace('\n', '<br>')
+
             self.html += f"""
                         <div class="log-entry {level_class}">
                             <span class="log-time">{log.get('time', '')}</span>
-                            [{log.get('level', '').upper()}] {log.get('message', '')}
+                            [{log.get('level', '').upper()}] {message}
                         </div>"""
 
         self.html += """
                     </div>"""
 
     def _generate_test_results(self, case):
+        request_data = case.get('request', {})
+        if isinstance(request_data, str):
+            try:
+                request_data = json.loads(request_data)
+            except json.decoder.JSONDecodeError:
+                pass
+        request_content = json.dumps(request_data, indent=2, ensure_ascii=False)
+        response_data = case.get('response', {})
+        if isinstance(response_data, str):
+            try:
+                response_data = json.loads(response_data)
+            except json.decoder.JSONDecodeError:
+                pass
+        response_content = json.dumps(response_data, indent=2, ensure_ascii=False)
         self.html += """
                     <div class="section">
                         <div class="section-title"><i class="el-icon-finished"></i> 测试结果</div>
@@ -674,8 +691,8 @@ class CompactHTMLTestReportGenerator:
                                 <pre>{response_content}</pre>
                             </div>
                         </div>""".format(
-            request_content=json.dumps(case.get('request', {}), indent=2, ensure_ascii=False),
-            response_content=json.dumps(case.get('response', {}), indent=2, ensure_ascii=False)
+            request_content=request_content,
+            response_content=response_content
         )
 
         assertions = case.get('assertions', [])

@@ -6,10 +6,7 @@ from dash.dependencies import Input, Output
 import plotly.graph_objects as go
 import random
 
-from core.generate.generate import TestCaseAutomaticGeneration
-from core.generate.reader import ReaderCase
 from core.model import VIRTUAL_NODE, Case
-from core.utils.path import data_path
 
 
 class HtmlGraph:

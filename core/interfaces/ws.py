@@ -1,8 +1,9 @@
 import asyncio
+
 import websockets
 from core.asserts import Asserts
-from core.logger import INFO, WARNING
-from core.model import Case, TestCaseRunResult
+from core.logger import info_log,warring_log
+from core.model import Case, TestCaseRunResult, ReportHeader
 
 
 class WSRequest:
@@ -11,23 +12,24 @@ class WSRequest:
         self.uri = self.new_case.domain + self.new_case.url
         self.websocket = None
         self.response_rows = []
+        self.test_run_result = test_run_result
 
     async def connect(self):
         """连接到WebSocket服务器"""
         self.websocket = await websockets.connect(self.uri)
-        WARNING.logger.warning("Connected to WebSocket server")
+        warring_log("Connected to WebSocket server",self.test_run_result)
 
     async def send(self, message):
         """发送消息到WebSocket服务器"""
         if self.websocket:
             await self.websocket.send(message)
-            INFO.logger.info(f"WebSocket Sent: {message}")
+            info_log(f"WebSocket Sent: {message}", self.test_run_result)
 
     async def receive(self):
         """接收WebSocket服务器的响应"""
         if self.websocket:
             response = await self.websocket.recv()
-            INFO.logger.info(f"WebSocket Received: {response}")
+            info_log(f"WebSocket Received: {response}", self.test_run_result)
             return response
         return None
 
@@ -35,7 +37,7 @@ class WSRequest:
         """关闭WebSocket连接"""
         if self.websocket:
             await self.websocket.close()
-            WARNING.logger.warning("WebSocket connection closed")
+            warring_log(f"WebSocket connection closed", self.test_run_result)
 
     async def run(self, messages, stop_condition):
         """
@@ -44,14 +46,14 @@ class WSRequest:
         :param stop_condition: 停止条件函数，接收响应并返回布尔值
         """
         await self.connect()
-        INFO.logger.info(self.new_case)
+        info_log(self.new_case, self.test_run_result)
         try:
             for message in messages:
                 await self.send(message)
                 response = await self.receive()
                 self.response_rows.append(response)
                 if stop_condition(response):
-                    WARNING.logger.warning("Stop condition met. Closing connection.")
+                    warring_log(f"Stop condition met. Closing connection.", self.test_run_result)
                     return
         finally:
             await self.close()
@@ -63,6 +65,13 @@ class WSRequest:
 
     def send_request(self, stop_condition):
         """兼容同步和异步调用的方式"""
+        # 添加运行结果
+        self.test_run_result.api_name = self.new_case.desc
+        self.test_run_result.name = self.new_case.desc
+        self.test_run_result.request = self.new_case.data.body
+        self.test_run_result.url = self.new_case.domain + self.new_case.url
+        self.test_run_result.method = self.new_case.method
+        self.test_run_result.headers = [ReportHeader(name=k,value=v) for k,v in self.new_case.headers.items()]
 
         async def run():
             await self.run(self.new_case.data.body, stop_condition)
@@ -72,6 +81,8 @@ class WSRequest:
             loop.create_task(run())  # 异步环境，后台运行
         except RuntimeError:
             asyncio.run(run())  # 同步环境，直接运行
+
+        self.test_run_result.response = self.response_rows
         return self.response_rows
 
     def should_continue(self):

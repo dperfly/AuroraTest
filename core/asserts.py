@@ -1,6 +1,6 @@
 import re
 
-from core.logger import INFO, WARNING
+from core.logger import info_log,warring_log
 from core.model import Case, InterType, TestCaseRunResult, ReportAssertion
 from core.extracts import extract_res
 
@@ -47,12 +47,11 @@ class Asserts:
                 test_run_result.assertions.append(
                     ReportAssertion(name=f"{paths}_{exp}",passed=True,message=f"Expected: {expect_res} Actual: {value}")
                 )
-                INFO.logger.info(
-                    f"\033[32m✓ Assertion passed\033[0m: "
-                    f"Actual: {value} (\033[33m{type(value).__name__}\033[0m) "
+                info_log(f"✓ Assertion passed: "
+                    f"Actual: {value} ({type(value).__name__}) "
                     f"{operator} "
-                    f"Expected: {expect_res} (\033[33m{type(expect_res).__name__}\033[0m) "
-                    f"| Types: \033[36m{type(value).__name__}\033[0m vs \033[36m{type(expect_res).__name__}\033[0m"
+                    f"Expected: {expect_res} ({type(expect_res).__name__}) "
+                    f"| Types: {type(value).__name__} vs {type(expect_res).__name__}",test_run_result
                 )
             else:
                 # TODO 断言失败后续需要做什么？
@@ -60,11 +59,11 @@ class Asserts:
                 test_run_result.assertions.append(
                     ReportAssertion(name=f"{paths}_{exp}",passed=False,message=f"Expected: {expect_res} Actual: {value}")
                 )
-                WARNING.logger.warning(
-                    f"\033[31m✗ Assertion failed\033[0m: "
-                    f"Actual: {value} (\033[33m{type(value).__name__}\033[0m) "
+                warring_log(
+                    f"✗ Assertion failed: "
+                    f"Actual: {value} ({type(value).__name__}) "
                     f"{operator} "
-                    f"Expected: {expect_res} (\033[33m{type(expect_res).__name__}\033[0m) "
-                    f"| Types: \033[36m{type(value).__name__}\033[0m vs \033[36m{type(expect_res).__name__}\033[0m"
+                    f"Expected: {expect_res} ({type(expect_res).__name__}) "
+                    f"| Types: {type(value).__name__} vs {type(expect_res).__name__}",test_run_result
                 )
         return all_assert_res

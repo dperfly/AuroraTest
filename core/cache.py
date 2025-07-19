@@ -1,6 +1,6 @@
 import yaml
 
-from core.logger import INFO
+from core.logger import info_log
 from core.exception import ValueNotFoundError
 from core.model import INIT_CACHE
 
@@ -41,5 +41,5 @@ class CacheHandler:
         for k, v in data.items():
             if k == INIT_CACHE:
                 for config_name, config_value in v.items():
-                    INFO.logger.info(f"设置配置: {config_name} = {config_value}")
+                    info_log(f"设置配置: {config_name} = {config_value}")
                     CacheHandler.update_cache(key=config_name, value=config_value)
