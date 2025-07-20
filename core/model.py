@@ -55,8 +55,8 @@ class ContentType(enum.Enum):
 
 @dataclass
 class Data:
-    data_type: str
-    body: Any
+    data_type: str = "JSON"
+    body: Any = None
 
     def __str__(self):
         return f"data_type:{self.data_type} body:{self.body}\n"
@@ -101,9 +101,9 @@ class Case:
 
 @dataclass
 class Response:
-    data: Any
-    headers: Dict[str, Union[str, List[str]]]
-    status_code: int
+    data: Any = None
+    headers: Dict[str, Union[str, List[str]]] = None
+    status_code: int = None
 
 
 @dataclass

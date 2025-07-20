@@ -47,6 +47,7 @@ class Asserts:
                 test_run_result.assertions.append(
                     ReportAssertion(name=f"{paths}_{exp}",passed=True,message=f"Expected: {expect_res} Actual: {value}")
                 )
+                test_run_result.status = "passed"
                 info_log(f"✓ Assertion passed: "
                     f"Actual: {value} ({type(value).__name__}) "
                     f"{operator} "
@@ -59,6 +60,7 @@ class Asserts:
                 test_run_result.assertions.append(
                     ReportAssertion(name=f"{paths}_{exp}",passed=False,message=f"Expected: {expect_res} Actual: {value}")
                 )
+                test_run_result.status = "failed"
                 warring_log(
                     f"✗ Assertion failed: "
                     f"Actual: {value} ({type(value).__name__}) "
