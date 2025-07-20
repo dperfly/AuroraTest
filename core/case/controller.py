@@ -38,6 +38,8 @@ class CaseController:
         elif InterType[api_type] == InterType.WS:
             ws_client = WSRequest(new_case=self.new_case, test_run_result=self.test_run_result)
             res = await ws_client.send_request_async(ws_client.should_continue())
+        elif InterType[api_type] == InterType.MySQL:
+            res = MysqlRequest(new_case=self.new_case, test_run_result=self.test_run_result)
 
         return asdict(RespData(request=self.new_case, response=res))
 
