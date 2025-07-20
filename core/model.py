@@ -1,14 +1,15 @@
 import enum
 from dataclasses import dataclass, field
-from typing import Union, List, Dict, Any, Final
+from typing import Union, List, Dict, Any, Final, Optional
 from pydantic import BaseModel
-
 
 # 虚拟节点，即所有用例的根
 VIRTUAL_NODE: Final = "_"
 EXTRACT_DELIMITER: Final[str] = "->"
 INIT_CACHE: Final[str] = "init_cache"
-
+ENV : Final[str] = "env"
+MYSQL: Final[str] = "mysql"
+REDIS: Final[str] = "redis"
 
 class InterType(enum.Enum):
     HTTP = "HTTP"
@@ -173,3 +174,20 @@ class TestReport(BaseModel):
     start_time: str = None
     summary: TestSummary = field(default_factory=TestSummary)
     test_cases: List[TestCaseRunResult] = field(default_factory=lambda: [])
+
+
+class SSHConfig(BaseModel):
+    ip: str
+    username: str
+    port: int = 22
+    password: Optional[str] = None
+    pkey: Optional[str] = None
+
+
+class MySQLConfig(BaseModel):
+    username: str
+    password: str
+    ip: str = "127.0.0.1"
+    port: int = 3306
+    ssh: Optional[SSHConfig] = None
+

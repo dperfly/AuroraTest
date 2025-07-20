@@ -1,7 +1,8 @@
 from typing import Callable
 from core.case.render import CaseRender
-from core.interfaces.http import HTTPRequest
-from core.interfaces.ws import WSRequest
+from core.steps.http import HTTPRequest
+from core.steps.mysql import MysqlRequest
+from core.steps.ws import WSRequest
 from core.model import Case, InterType, RespData, TestCaseRunResult, TestSummary
 from core.plc import loop_control
 from core.asserts import Asserts

@@ -4,23 +4,26 @@ from dataclasses import asdict
 
 import websockets
 from core.asserts import Asserts
-from core.logger import info_log,warring_log
-from core.model import Case, TestCaseRunResult, ReportHeader, RespData, Response
+from core.steps.base import StepBase
+from core.logger import info_log, warring_log, error_log
+from core.model import Case, TestCaseRunResult, RespData, Response
 
 
-class WSRequest:
+class WSRequest(StepBase):
     def __init__(self, new_case: Case, test_run_result: TestCaseRunResult):
-        self.new_case = new_case
-        self.uri = self.new_case.domain + self.new_case.url
+        super().__init__(new_case, test_run_result)
+        self.uri = new_case.domain + new_case.url
         self.websocket = None
         self.response_rows = []
         self.last_response = None
-        self.test_run_result = test_run_result
 
     async def connect(self):
         """连接到WebSocket服务器"""
-        self.websocket = await websockets.connect(self.uri)
-        warring_log("Connected to WebSocket server",self.test_run_result)
+        try:
+            self.websocket = await websockets.connect(self.uri)
+            warring_log("Connected to WebSocket server",self.test_run_result)
+        except ConnectionRefusedError:
+            error_log("WebSocket connection refused", self.test_run_result)
 
     async def send(self, message):
         """发送消息到WebSocket服务器"""
@@ -62,10 +65,15 @@ class WSRequest:
                     except websockets.exceptions.ConnectionClosed:
                         break  # 连接关闭时退出循环
 
+                    # 没有返回值，直接结束
+                    if not data:
+                        break
+
                     try:
                         data = json.loads(data)  # 尝试解析JSON
                     except json.decoder.JSONDecodeError:
                         pass
+
 
                     # 构造响应对象
                     resp = Response(data=data)
@@ -89,12 +97,7 @@ class WSRequest:
         await self.run(self.new_case.data.body, stop_condition)
 
         # 添加运行结果
-        self.test_run_result.api_name = self.new_case.desc
-        self.test_run_result.name = self.new_case.desc
-        self.test_run_result.request = self.new_case.data.body
-        self.test_run_result.url = self.new_case.domain + self.new_case.url
-        self.test_run_result.method = self.new_case.method
-        self.test_run_result.headers = [ReportHeader(name=k, value=v) for k, v in self.new_case.headers.items()]
+        self.set_request_log()
         self.test_run_result.response = self.response_rows
 
 

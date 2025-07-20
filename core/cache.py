@@ -2,10 +2,10 @@ import yaml
 
 from core.logger import info_log
 from core.exception import ValueNotFoundError
-from core.model import INIT_CACHE
+from core.model import INIT_CACHE, ENV, MYSQL, MySQLConfig, REDIS
 
 _cache = {}
-
+_env = {}
 
 class CacheHandler:
     @staticmethod
@@ -43,3 +43,14 @@ class CacheHandler:
                 for config_name, config_value in v.items():
                     info_log(f"设置配置: {config_name} = {config_value}")
                     CacheHandler.update_cache(key=config_name, value=config_value)
+            if k == ENV:
+                for config_name, config_value in v.items():
+                    if config_name == MYSQL:
+                        _env[MYSQL] = MySQLConfig(**config_value)
+
+                    # if config_name == REDIS:
+                    #     RedisConfig(**config_value)
+
+    @staticmethod
+    def get_mysql_config():
+        return _env.get(MYSQL,None)

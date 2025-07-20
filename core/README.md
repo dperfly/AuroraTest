@@ -12,6 +12,6 @@ html_report: html报告
 exception: 异常定义
 hook_base: hook_func需要继承的class
 utils: 工具库
-interfaces: http、ws、sql、redis等接口
+steps: http、ws、sql、redis等接口
 case: 控制测试用例运行
 ```

@@ -27,3 +27,6 @@ class GenerateCaseError(Exception):
 
 class NotFoundTestCaseError(Exception):
     Exception("没有发现测试用例")
+
+class MySQLConfigNotFoundError(Exception):
+    Exception("MySQL config not found, 若想使用mysql请在配置文件中的env中设置mysql环境")

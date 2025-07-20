@@ -1,15 +1,15 @@
 import json
 
+from core.steps.base import StepBase
 from core.logger import info_log, error_log
 from core.model import Case, DataType, Response, ContentType, TestCaseRunResult, ReportHeader
 
 import requests
 
 
-class HTTPRequest:
-    def __init__(self, new_case: Case,test_run_result: TestCaseRunResult):
-        self.new_case = new_case
-        self.test_run_result = test_run_result
+class HTTPRequest(StepBase):
+    def __init__(self, new_case: Case, test_run_result: TestCaseRunResult):
+        super().__init__(new_case, test_run_result)
 
     def send_request(self):
         method = self.new_case.method
@@ -42,12 +42,7 @@ class HTTPRequest:
         resp = Response(data=data, headers=dict(response.headers), status_code=response.status_code)
 
         # 添加运行结果
-        self.test_run_result.api_name = self.new_case.desc
-        self.test_run_result.name = self.new_case.desc
-        self.test_run_result.request = self.new_case.data.body
-        self.test_run_result.url = self.new_case.domain + self.new_case.url
-        self.test_run_result.method = self.new_case.method
-        self.test_run_result.headers = [ReportHeader(name=k,value=v) for k,v in self.new_case.headers.items()]
+        self.set_request_log()
         self.test_run_result.response = data
 
         return resp
