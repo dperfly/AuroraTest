@@ -11,7 +11,7 @@ class Asserts:
     def assert_response(cls, run_res, case: Case,test_run_result:TestCaseRunResult) -> bool:
         all_assert_res = True
         for exp, paths in case.asserts.items():
-            if case.inter_type.upper() == InterType.HTTP.value or case.inter_type == InterType.WS.value:
+            if InterType.__members__.get(case.inter_type.upper(),None):
                 # 进行结果提取
                 value = extract_res(run_res, paths)
             else:

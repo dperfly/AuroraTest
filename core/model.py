@@ -13,7 +13,7 @@ REDIS: Final[str] = "redis"
 
 class InterType(enum.Enum):
     HTTP = "HTTP"
-    MySQL = "MySQL"
+    MYSQL = "MYSQL"
     REDIS = "REDIS"
     WS = "WS"
 
@@ -68,8 +68,8 @@ class Case:
     desc: str = ""
     plc: Union[str, None] = None
     inter_type: str = "HTTP"
-    domain: str = None
-    url: str = None
+    domain: str = ""
+    url: str = ""
     method: str = "GET"
     headers: Dict[str, Union[str, List[str]]] = field(default_factory=lambda: {})
     data: Data = field(default_factory=lambda: Data(data_type="FORM", body=""))

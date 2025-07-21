@@ -64,7 +64,7 @@ class Extracts:
     @classmethod
     def extracts_response(cls, run_res, case: Case):
         for name, paths in case.extracts.items():
-            if case.inter_type.upper() == InterType.HTTP.value or case.inter_type == InterType.WS.value:
+            if InterType.__members__.get(case.inter_type.upper(),None):
                 value = extract_res(run_res, paths)
                 CacheHandler.update_cache(key=name, value=value)
             else:
