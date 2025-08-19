@@ -94,10 +94,16 @@ class MysqlInit:
 class MysqlRequest(StepBase):
     def __init__(self, new_case: Case, test_run_result: TestCaseRunResult):
         super().__init__(new_case, test_run_result)
-        self.connection = MysqlInit().connection
+        try:
+            self.connection = MysqlInit().connection
+        except Exception as e:
+            self.test_run_result.response = str(e)
 
     def send_request(self):
         self.set_request_log()
+        # 如果有连接上的错误直接返回
+        if self.test_run_result.response:
+            return Response(data=self.test_run_result.response)
 
         try:
             with self.connection.cursor() as cursor:
