@@ -43,8 +43,8 @@ class ReaderCase:
 
         data = open(file_path, 'r', encoding='utf-8')
         for k, v in yaml.load(data, Loader=yaml.FullLoader).items():
-            case_dict[k] = from_dict(data_class=Case, data=v)
-
+            # case_dict[k] = from_dict(data_class=Case, data=v)
+            case_dict[k] = Case.model_validate(v)
         return case_dict
 
     @staticmethod

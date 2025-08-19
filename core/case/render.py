@@ -1,12 +1,10 @@
 import json
 
-from dataclasses import asdict
 from typing import Callable
 
 from core.model import Case
 
 from mako.template import Template
-from dacite import from_dict
 
 
 class DictToClass:
@@ -26,7 +24,8 @@ class CaseRender:
         self.funcs = funcs
 
     def render(self) -> Case:
-        temp = Template(json.dumps(asdict(self.case)))
+        temp = Template(json.dumps(self.case.model_dump()))
         res = temp.render(cache=DictToClass(self.cache), func=self.funcs)
         dicts = json.loads(res)
-        return from_dict(data_class=Case, data=dicts)
+
+        return Case.model_validate(dicts)

@@ -1,15 +1,17 @@
 import enum
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Union, List, Dict, Any, Final, Optional
 from pydantic import BaseModel
+from pydantic.fields import Field
 
 # 虚拟节点，即所有用例的根
 VIRTUAL_NODE: Final = "_"
 EXTRACT_DELIMITER: Final[str] = "->"
 INIT_CACHE: Final[str] = "init_cache"
-ENV : Final[str] = "env"
+ENV: Final[str] = "env"
 MYSQL: Final[str] = "mysql"
 REDIS: Final[str] = "redis"
+
 
 class InterType(enum.Enum):
     HTTP = "HTTP"
@@ -63,62 +65,45 @@ class Data:
         return f"data_type:{self.data_type} body:{self.body}\n"
 
 
-@dataclass
-class Case:
-    desc: str = ""
-    plc: Union[str, None] = None
-    inter_type: str = "HTTP"
-    domain: str = ""
-    url: str = ""
-    method: str = "GET"
-    headers: Dict[str, Union[str, List[str]]] = field(default_factory=lambda: {})
-    data: Data = field(default_factory=lambda: Data(data_type="FORM", body=""))
-    extracts: Dict[str, str] = field(default_factory=lambda: {})
-    asserts: Dict[str, str] = field(default_factory=lambda: {})
-    before_cases: List[str] = field(default_factory=lambda: [])
+class Case(BaseModel):
+    desc: str = Field(default="", description="用例功能描述")
+    plc: Union[str, None] = Field(default=None, description="用例的逻辑控制器，支持python格式的写法的for range循环")
+    inter_type: str = Field(default=InterType.HTTP, description="接口类型HTTP、WS、MYSQL、REDIS")
+    domain: str = Field(default="", description="接口的domain,需要包含协议类型例如https://127.0.0.1")
+    url: str = Field(default="", description="接口的url路径")
+    method: str = Field(default="GET", description="接口的method")
+    headers: Dict[str, Union[str, List[str]]] = Field(default_factory=lambda: {},
+                                                      description="接口的header，字典形式表示")
+    data: Data = Field(default_factory=lambda: Data(data_type="FORM", body=""), description="接口请求的数据")
+    extracts: Dict[str, str] = Field(default_factory=lambda: {}, description="接口请求的提取器，为字典形式表示")
+    asserts: Dict[str, Union[int, str]] = Field(default_factory=lambda: {},
+                                                description="接口请求的断言器，为字典形式表示")
+    before_cases: List[str] = Field(default_factory=lambda: [],
+                                    description="接口请求的前置用例，在执行该条case前需要先执行完before_cases中的所有请求")
 
     def __str__(self):
-        headers = [f"{k}:{v}" for k, v in self.headers.items()]
-        extracts = [f"{k}:{v}" for k, v in self.extracts.items()]
-        asserts = [f"{k}:{v}" for k, v in self.asserts.items()]
-        res = f"""                                                              
-|---------------|-------------------------------------------------------------------
-| desc          | {self.desc}  
-| domain        | {self.domain}                                                     
-| url           | {self.url}                                                        
-| method        | {self.method}                                                     
-| headers       | {headers}                                                         
-| data          | {self.data.data_type}:{self.data.body}
-| plc           | {self.plc}                                                        
-| inter_type    | {self.inter_type}                                                 
-| extracts      |{extracts}                                                         
-| asserts       |{asserts}                                                          
-|---------------|-------------------------------------------------------------------"""
-        return res
+        return self.model_dump_json(indent=2)
 
 
 # TODO 路径过于复杂，jsonpath写的不是很顺畅
 #  eg: $.response.data.data.accessToken.tokenValue 其中response.data 有些多余
 
-@dataclass
-class Response:
-    data: Any = None
-    headers: Dict[str, Union[str, List[str]]] = None
-    status_code: int = None
+class Response(BaseModel):
+    data: Any = Field(default=None, description="响应返回的数据")
+    headers: Dict[str, Union[str, List[str]]] = Field(default=None, description="响应headers")
+    status_code: int = Field(default=None, description="响应状态码")
 
 
-@dataclass
-class RespData:
+class RespData(BaseModel):
     request: Case
     response: Response
 
 
-@dataclass
-class SelectCase:
+class SelectCase(BaseModel):
     """ 用例过滤条件, 用于筛选用例 """
-    case_names: List[str] = field(default_factory=lambda: [])
-    file_names: List[str] = field(default_factory=lambda: [])
-    dir_names: List[str] = field(default_factory=lambda: [])
+    case_names: List[str] = Field(default=[], description="通过用例名称进行过滤")
+    file_names: List[str] = Field(default=[], description="通过文件名称进行过滤")
+    dir_names: List[str] = Field(default=[], description="通过目录名称进行过滤")
 
 
 # 测试报告相关数据结构
@@ -153,14 +138,14 @@ class TestCaseRunResult(BaseModel):
     group: str = '未分组'
     api_name: str = None
     url: str = None
-    method: str = None  # 'get', 'post', 'put', 'delete', etc.
+    method: str = 'GET'  # 'get', 'post', 'put', 'delete', etc.
     status: str = 'passed'  # 'passed', 'failed', 'skipped'
-    params: List[ReportParam] = field(default_factory=lambda: [])
-    headers: List[ReportHeader] = field(default_factory=lambda: [])
-    logs: List[ReportLogEntry] = field(default_factory=lambda: [])
+    params: List[ReportParam] = Field(default_factory=lambda: [])
+    headers: List[ReportHeader] = Field(default_factory=lambda: [])
+    logs: List[ReportLogEntry] = Field(default_factory=lambda: [])
     request: Any = None
     response: Any = None
-    assertions: List[ReportAssertion] = field(default_factory=lambda: [])
+    assertions: List[ReportAssertion] = Field(default_factory=lambda: [])
 
 
 class TestSummary(BaseModel):
@@ -172,8 +157,8 @@ class TestSummary(BaseModel):
 
 class TestReport(BaseModel):
     start_time: str = None
-    summary: TestSummary = field(default_factory=TestSummary)
-    test_cases: List[TestCaseRunResult] = field(default_factory=lambda: [])
+    summary: TestSummary = Field(default_factory=TestSummary)
+    test_cases: List[TestCaseRunResult] = Field(default_factory=lambda: [])
 
 
 class SSHConfig(BaseModel):

@@ -7,7 +7,6 @@ from core.model import Case, InterType, RespData, TestCaseRunResult, TestSummary
 from core.plc import loop_control
 from core.asserts import Asserts
 from core.extracts import Extracts
-from dataclasses import asdict
 
 
 class CaseController:
@@ -40,8 +39,7 @@ class CaseController:
             res = await ws_client.send_request_async(ws_client.should_continue())
         elif InterType[api_type] == InterType.MYSQL:
             res = MysqlRequest(new_case=self.new_case, test_run_result=self.test_run_result).send_request()
-
-        return asdict(RespData(request=self.new_case, response=res))
+        return RespData(request=self.new_case, response=res).model_dump()
 
     async def controller(self):
         if self.new_case.plc:

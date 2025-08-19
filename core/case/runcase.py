@@ -44,7 +44,7 @@ class AsyncRunCase:
                     await CaseController(old_case=case, cache=self.cache, func=self.hook_func,
                                          test_run_result=test_run_result, summary=self.report.summary).controller()
         except Exception as e:
-            raise e
+            # raise e
             info_log(f"Case {case_name} failed: {str(e)}")
             # 可选：将错误信息存入self.cache供后续用例使用
             self.cache[f"{case_name}_error"] = str(e)
@@ -65,10 +65,11 @@ class AsyncRunCase:
             info_log(f"Start running cases in priority group: {order}")
             await self.__run_barrel(order)
 
-    def run(self):
+    def run(self) -> TestReport:
         """同步入口方法"""
 
         asyncio.run(self.__run_all_cases())
 
-        generator = CompactHTMLTestReportGenerator(self.report.dict())
+        generator = CompactHTMLTestReportGenerator(self.report.model_dump())
         generator.save_report("html_report.html")
+        return self.report
