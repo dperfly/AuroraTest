@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AuroraTest - 登录</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <link rel="stylesheet" href="/web/assets/common.css?v=16">
+</head>
+<body class="min-h-screen">
+<div id="app" v-cloak>
+  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-blue-950 to-purple-950">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md border border-gray-200">
+      <div class="text-center mb-8">
+        <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="fas fa-bolt text-white text-3xl"></i></div>
+        <h1 class="text-2xl font-bold text-gray-800">AuroraTest</h1>
+        <p class="text-gray-500 mt-2">自动化测试平台</p>
+      </div>
+      <form @submit.prevent="handleLogin">
+        <div class="mb-4">
+          <label class="block text-gray-700 text-sm font-medium mb-2">用户名</label>
+          <div class="relative"><i class="fas fa-user absolute left-3 top-3 text-gray-400"></i><input v-model="loginForm.username" type="text" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg outline-none" placeholder="请输入用户名"></div>
+        </div>
+        <div class="mb-6">
+          <label class="block text-gray-700 text-sm font-medium mb-2">密码</label>
+          <div class="relative"><i class="fas fa-lock absolute left-3 top-3 text-gray-400"></i><input v-model="loginForm.password" :type="showPassword ? 'text' : 'password'" class="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg outline-none" placeholder="请输入密码"><button type="button" @click="showPassword = !showPassword" class="absolute right-3 top-3 text-gray-400 hover:text-gray-600"><i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i></button></div>
+        </div>
+        <button type="submit" :disabled="loginLoading" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition flex items-center justify-center disabled:opacity-50"><div v-if="loginLoading" class="loading-spinner mr-2"></div><span>登 录</span></button>
+      </form>
+      <div v-if="loginError" class="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm"><i class="fas fa-exclamation-triangle mr-1"></i>{{ loginError }}</div>
+      <p class="mt-6 text-center text-gray-400 text-sm">默认账号: admin / admin123</p>
+    </div>
+  </div>
+</div>
+<script src="/web/assets/common.js?v=16"></script>
+<script>
+const { createApp, ref, onMounted } = Vue;
+createApp({
+  setup() {
+    const loginForm = ref({ username: 'admin', password: '' });
+    const loginLoading = ref(false);
+    const loginError = ref('');
+    const showPassword = ref(false);
+    const handleLogin = async () => {
+      loginLoading.value = true;
+      loginError.value = '';
+      try {
+        await login(loginForm.value.username, loginForm.value.password);
+        window.location.href = '/web/dashboard.html';
+      } catch (error) {
+        loginError.value = error.message;
+      } finally {
+        loginLoading.value = false;
+      }
+    };
+    onMounted(() => { if (getToken()) window.location.href = '/web/dashboard.html'; });
+    return { loginForm, loginLoading, loginError, showPassword, handleLogin };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>

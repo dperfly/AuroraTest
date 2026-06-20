@@ -4,7 +4,6 @@ import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output
 import plotly.graph_objects as go
-import random
 
 from core.model import VIRTUAL_NODE, Case
 
@@ -14,21 +13,43 @@ class HtmlGraph:
         "https://unpkg.com/element-ui/lib/theme-chalk/index.css"
     ])
 
-    # 随机生成节点的坐标
-    @staticmethod
-    def generate_random_coordinates(nodes, x_range=(1.15, 2.85), y_range=(1.15, 2.85)):
-        return {node: (random.uniform(*x_range), random.uniform(*y_range)) for node in nodes}
-
-    def __init__(self, nodes, edges, cases):
+    def __init__(self, nodes, edges, cases, barrels):
         self.nodes = nodes
         self.edges = edges
         self.cases = cases
-        self.node_positions = self.generate_random_coordinates(self.nodes)
+        self.barrels: dict[int, set[str]] = barrels
+        self.node_positions = {}
+
+    # 生成节点的坐标
+    def generate_random_coordinates(self):
+        if not self.barrels:
+            return self.node_positions
+
+        visible_barrels = [
+            (barrel_index, sorted(node for node in self.barrels[barrel_index] if node != VIRTUAL_NODE))
+            for barrel_index in sorted(self.barrels.keys(), reverse=True)
+        ]
+        visible_barrels = [(index, nodes) for index, nodes in visible_barrels if nodes]
+        if not visible_barrels:
+            return self.node_positions
+
+        x_min, x_max = 0.4, 3.6
+        y_min, y_max = 0.35, 3.65
+        x_step = 0 if len(visible_barrels) == 1 else (x_max - x_min) / (len(visible_barrels) - 1)
+
+        for column_index, (_, nodes) in enumerate(visible_barrels):
+            x = x_min + x_step * column_index
+            y_step = 0 if len(nodes) == 1 else (y_max - y_min) / (len(nodes) - 1)
+            for row_index, node in enumerate(nodes):
+                y = (y_min + y_max) / 2 if len(nodes) == 1 else y_max - y_step * row_index
+                self.node_positions[node] = (float(x), float(y))
+
+        return self.node_positions
 
     # 找到以 start_node 为终点的所有父节点和祖先节点
     def __find_ancestors(self, node):
         ancestors = set()
-        to_explore = [node]  # 使用栈来遍历节点
+        to_explore = [node]
         while to_explore:
             current_node = to_explore.pop()
             for start, end in self.edges:
@@ -36,6 +57,24 @@ class HtmlGraph:
                     ancestors.add(start)
                     to_explore.append(start)
         return ancestors
+
+    def __find_descendants(self, node):
+        descendants = set()
+        to_explore = [node]
+        while to_explore:
+            current_node = to_explore.pop()
+            for start, end in self.edges:
+                if start == current_node and end not in descendants:
+                    descendants.add(end)
+                    to_explore.append(end)
+        descendants.discard(VIRTUAL_NODE)
+        return descendants
+
+    def __find_related_nodes(self, node):
+        related_nodes = self.__find_ancestors(node) | self.__find_descendants(node)
+        related_nodes.add(node)
+        related_nodes.discard(VIRTUAL_NODE)
+        return related_nodes
 
     # 创建有向图的初始图形
     def __create_figure(self, show_nodes=None, highlight_nodes=None):
@@ -61,7 +100,9 @@ class HtmlGraph:
         # 添加有向边 (使用 annotations 创建箭头)
         for start_node, end_node in self.edges:
             if (show_nodes and (start_node not in show_nodes or end_node not in show_nodes)
-                    or start_node == VIRTUAL_NODE):
+                    or start_node == VIRTUAL_NODE
+                    or start_node not in self.node_positions
+                    or end_node not in self.node_positions):
                 continue  # 不展示无关边
             else:
                 x0, y0 = self.node_positions[start_node]
@@ -144,9 +185,8 @@ class HtmlGraph:
         def __update_figure(click_data, dropdown_value):
             if dropdown_value:  # 如果下拉框选择了节点
                 clicked_node = dropdown_value
-                # 找到所有能到达被点击节点的父节点和祖先节点
                 ancestors = self.__find_ancestors(clicked_node)
-                ancestors.add(clicked_node)  # 包括被点击的节点
+                related_nodes = self.__find_related_nodes(clicked_node)
                 case: Case = self.cases.get(clicked_node)
                 # 生成节点的详细信息
                 node_info = f"#### 节点名称:{clicked_node}\n" \
@@ -164,14 +204,12 @@ class HtmlGraph:
                             f"##### asserts:    \t{case.asserts}\n"
 
                 print(node_info)
-                # 重新绘制图形并仅显示祖先节点和被点击节点
-                return self.__create_figure(show_nodes=ancestors, highlight_nodes=ancestors), node_info
+                return self.__create_figure(show_nodes=related_nodes, highlight_nodes=related_nodes), node_info
 
             elif click_data:  # 如果图表中的节点被点击
                 clicked_node = click_data['points'][0]['text']
-                # 找到所有与点击节点相关的节点
                 ancestors = self.__find_ancestors(clicked_node)
-                ancestors.add(clicked_node)  # 包括被点击的节点
+                related_nodes = self.__find_related_nodes(clicked_node)
                 case: Case = self.cases.get(clicked_node)
                 # 生成节点的详细信息
                 node_info = f"#### 节点名称:{clicked_node}\n" \
@@ -187,13 +225,13 @@ class HtmlGraph:
                             f"##### plc:        \t{case.plc}\n" \
                             f"##### extracts:   \t{case.extracts}\n" \
                             f"##### asserts:    \t{case.asserts}\n"
-                # 高亮显示相关节点，但不隐藏其他节点
-                return self.__create_figure(highlight_nodes=ancestors), node_info
+                return self.__create_figure(show_nodes=related_nodes, highlight_nodes=related_nodes), node_info
 
             # 默认返回初始图
             return self.__create_figure(), "点击图中的节点或从下拉框中选择节点以显示详细信息"
 
     def run_server(self, debug=True):
+        self.generate_random_coordinates()
         self.__html_layout()
         self.__update_figure()
         return self.app.run(debug=debug)

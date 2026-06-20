@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AuroraTest - 执行测试</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <link rel="stylesheet" href="/web/assets/common.css?v=16">
+</head>
+<body class="min-h-screen">
+<div id="app" v-cloak></div>
+<script src="/web/assets/common.js?v=16"></script>
+<script>
+const { createApp, ref, computed, onMounted } = Vue;
+createApp({
+  template: shellTemplate(`
+    <div class="space-y-6">
+      <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div class="bg-gradient-to-r from-green-500 to-emerald-600 px-6 py-4"><div class="flex items-center justify-between"><div class="flex items-center"><i class="fas fa-play-circle text-white text-2xl mr-3"></i><h3 class="text-lg font-semibold text-white">选择要执行的用例</h3></div><span class="text-white text-sm">已选择 {{ totalSelectedCount }} 个用例</span></div></div>
+        <div class="p-6">
+          <div class="flex items-center justify-between mb-4 pb-4 border-b border-gray-100"><div class="flex items-center space-x-3"><button @click="selectAllCases" class="px-3 py-1.5 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition flex items-center"><i class="fas fa-check mr-1.5"></i>全选</button><button @click="clearAllSelection" class="px-3 py-1.5 text-sm bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition flex items-center"><i class="fas fa-times mr-1.5"></i>清空</button></div><div class="flex items-center space-x-2 text-sm text-gray-500"><i class="fas fa-info-circle"></i><span>勾选后点击“开始执行”</span></div></div>
+          <div class="border border-gray-200 rounded-lg overflow-hidden"><div class="bg-gray-50 px-4 py-3 border-b border-gray-200"><h4 class="font-medium text-gray-800 flex items-center"><i class="fas fa-sitemap text-blue-500 mr-2"></i>按目录/文件选择</h4></div><div class="max-h-96 overflow-auto p-2">
+            <div v-for="dir in groupedTestCases" :key="dir.name" class="mb-2"><div class="flex items-center px-3 py-2 hover:bg-blue-50 rounded-lg transition cursor-pointer" @click="toggleDirExpand(dir.name)"><input type="checkbox" :checked="isDirSelected(dir.name)" @change.stop="toggleDirSelection(dir.name)" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 mr-3"><i :class="expandedDirs.includes(dir.name) ? 'fas fa-chevron-down' : 'fas fa-chevron-right'" class="text-gray-400 mr-2 text-xs"></i><i class="fas fa-folder text-yellow-500 mr-2"></i><span class="font-medium text-gray-700">{{ dir.name }}</span><span class="ml-2 text-xs text-gray-400">({{ dir.files.length }} 个文件)</span></div>
+              <div v-if="expandedDirs.includes(dir.name)" class="ml-8 mt-1 space-y-1"><div v-for="file in dir.files" :key="file.path" class="mb-1"><div class="flex items-center px-3 py-1.5 hover:bg-blue-50 rounded-lg transition cursor-pointer" @click="toggleFileExpand(file.path)"><input type="checkbox" :checked="isFileSelected(file.filename)" @change.stop="toggleFileSelection(file.filename, file.cases)" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 mr-3"><i :class="expandedFiles.includes(file.path) ? 'fas fa-folder-open' : 'fas fa-file-alt'" class="text-blue-400 mr-2 text-sm"></i><span class="text-gray-600">{{ file.filename }}</span><span class="ml-2 text-xs text-gray-400">({{ file.cases.length }} 个用例)</span><i :class="expandedFiles.includes(file.path) ? 'fas fa-chevron-down' : 'fas fa-chevron-right'" class="text-gray-400 ml-auto text-xs"></i></div>
+                <div v-if="expandedFiles.includes(file.path)" class="ml-8 mt-1 space-y-1"><div v-for="caseItem in file.cases" :key="caseItem.name" class="flex items-center px-3 py-1.5 hover:bg-gray-50 rounded-lg transition cursor-pointer"><input type="checkbox" v-model="executeSelect.case_names" :value="caseItem.name" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 mr-3"><i :class="getCaseIcon(caseItem.inter_type)" class="mr-2 text-sm"></i><span class="text-sm text-gray-600">{{ caseItem.name }}</span><span v-if="caseItem.desc" class="ml-2 text-xs text-gray-400 truncate max-w-xs">- {{ caseItem.desc }}</span></div></div>
+              </div></div>
+            </div>
+          </div></div>
+          <div v-if="executeSelect.case_names.length" class="mt-6"><h4 class="font-medium text-gray-800 mb-3 flex items-center"><i class="fas fa-list-check text-green-500 mr-2"></i>已选择的用例 ({{ executeSelect.case_names.length }})</h4><div class="bg-blue-50 rounded-lg p-3 max-h-32 overflow-auto"><div class="flex flex-wrap gap-2"><span v-for="caseName in executeSelect.case_names" :key="caseName" class="inline-flex items-center px-2.5 py-1 bg-white border border-blue-200 text-blue-700 rounded-full text-sm shadow-sm"><i class="fas fa-check text-green-500 mr-1.5 text-xs"></i>{{ caseName }}</span></div></div></div>
+          <div class="mt-6 flex justify-end pt-4 border-t border-gray-100"><button @click="executeTests" :disabled="executingTests" class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-8 py-3 rounded-xl flex items-center transition-all shadow-lg hover:shadow-xl disabled:opacity-50 font-medium"><div v-if="executingTests" class="loading-spinner mr-3 w-5 h-5 border-2 border-white border-t-transparent"></div><i v-else class="fas fa-play mr-3"></i>{{ executingTests ? '正在执行测试...' : '开始执行' }}</button></div>
+        </div>
+      </div>
+      <div v-if="lastReport" class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="bg-gradient-to-r from-blue-500 to-indigo-600 px-6 py-4"><h3 class="text-lg font-semibold text-white flex items-center"><i class="fas fa-chart-bar mr-3"></i>执行结果</h3></div><div class="p-6"><div class="grid grid-cols-4 gap-4 mb-6"><div v-for="item in summaryCards" :key="item.label" :class="['rounded-xl p-5 text-center border', item.cls]"><p class="text-3xl font-bold">{{ item.value }}</p><p class="text-sm mt-1">{{ item.label }}</p></div></div><div class="space-y-3 max-h-96 overflow-auto pr-2"><div v-for="caseItem in lastReport.test_cases" :key="caseItem.case_id" class="rounded-xl p-4 border-2 bg-gray-50 border-gray-200"><div class="flex items-center justify-between"><div><p class="font-semibold text-gray-800 text-lg">{{ caseItem.case_id }}</p><p class="text-sm text-gray-500">{{ caseItem.group || '未分组' }}</p></div><span class="px-4 py-1.5 rounded-full text-sm font-semibold bg-blue-50 text-blue-600">{{ getStatusText(caseItem.status) }}</span></div></div></div></div></div>
+    </div>
+  `),
+  setup() {
+    const shell = pageShell('execute', '执行测试');
+    const testCases = ref([]);
+    const expandedFiles = ref([]);
+    const expandedDirs = ref([]);
+    const executeSelect = ref({ case_names: [], file_names: [], dir_names: [] });
+    const executingTests = ref(false);
+    const lastReport = ref(null);
+    const groupedTestCases = computed(() => { const groups = {}; testCases.value.forEach(file => { const parts = file.path.split(/[\\/]/); const dir = parts.length > 1 ? parts[0] : '根目录'; if (!groups[dir]) groups[dir] = { name: dir, files: [] }; groups[dir].files.push(file); }); return Object.values(groups); });
+    const totalSelectedCount = computed(() => executeSelect.value.case_names.length);
+    const toggleDirExpand = dir => { const idx = expandedDirs.value.indexOf(dir); idx > -1 ? expandedDirs.value.splice(idx, 1) : expandedDirs.value.push(dir); };
+    const toggleFileExpand = path => { const idx = expandedFiles.value.indexOf(path); idx > -1 ? expandedFiles.value.splice(idx, 1) : expandedFiles.value.push(path); };
+    const casesInDir = dir => (groupedTestCases.value.find(item => item.name === dir)?.files || []).flatMap(file => file.cases.map(item => item.name));
+    const isDirSelected = dir => { const names = casesInDir(dir); return names.length && names.every(name => executeSelect.value.case_names.includes(name)); };
+    const toggleDirSelection = dir => { const names = casesInDir(dir); executeSelect.value.case_names = isDirSelected(dir) ? executeSelect.value.case_names.filter(name => !names.includes(name)) : Array.from(new Set([...executeSelect.value.case_names, ...names])); };
+    const isFileSelected = filename => { const file = testCases.value.find(item => item.filename === filename); return file?.cases.length && file.cases.every(item => executeSelect.value.case_names.includes(item.name)); };
+    const toggleFileSelection = (filename, cases) => { const names = cases.map(item => item.name); executeSelect.value.case_names = isFileSelected(filename) ? executeSelect.value.case_names.filter(name => !names.includes(name)) : Array.from(new Set([...executeSelect.value.case_names, ...names])); };
+    const selectAllCases = () => { executeSelect.value.case_names = testCases.value.flatMap(file => file.cases.map(item => item.name)); };
+    const clearAllSelection = () => { executeSelect.value = { case_names: [], file_names: [], dir_names: [] }; };
+    const executeTests = async () => { executingTests.value = true; try { lastReport.value = await api('/execute', { method: 'POST', body: JSON.stringify(executeSelect.value) }); } catch (e) { alert('执行失败: ' + e.message); } finally { executingTests.value = false; } };
+    const summaryCards = computed(() => lastReport.value ? [
+      { label: '用例总数', value: lastReport.value.summary.total, cls: 'border-gray-200' },
+      { label: '通过', value: lastReport.value.summary.passed, cls: 'border-green-200 text-green-600' },
+      { label: '失败', value: lastReport.value.summary.failed, cls: 'border-red-200 text-red-600' },
+      { label: '跳过', value: lastReport.value.summary.skipped, cls: 'border-yellow-200 text-yellow-600' }
+    ] : []);
+    onMounted(async () => { await shell.initShell(); testCases.value = await api('/testcases'); expandedFiles.value = testCases.value.map(file => file.path); expandedDirs.value = groupedTestCases.value.map(item => item.name); });
+    return { ...shell, testCases, expandedFiles, expandedDirs, executeSelect, executingTests, lastReport, groupedTestCases, totalSelectedCount, summaryCards, getCaseIcon, getStatusText, toggleDirExpand, toggleFileExpand, isDirSelected, toggleDirSelection, isFileSelected, toggleFileSelection, selectAllCases, clearAllSelection, executeTests };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>

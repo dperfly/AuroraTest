@@ -41,10 +41,10 @@ class CompactHTMLTestReportGenerator:
         body {{
             font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", Arial, sans-serif;
             line-height: 1.5;
-            color: #333;
+            color: #e5e7eb;
             margin: 0;
             padding: 0;
-            background-color: #f5f7fa;
+            background: #0f172a;
             font-size: 14px;
         }}
 
@@ -86,7 +86,7 @@ class CompactHTMLTestReportGenerator:
         .summary-card {{
             flex: 1;
             min-width: 120px;
-            background: white;
+            background: #1e293b;
             border-radius: 4px;
             padding: 12px;
             box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.1);
@@ -100,7 +100,7 @@ class CompactHTMLTestReportGenerator:
         }}
 
         .summary-card .label {{
-            color: #909399;
+            color: #94a3b8;
             font-size: 12px;
         }}
 
@@ -126,7 +126,7 @@ class CompactHTMLTestReportGenerator:
         .chart-container {{
             flex: 1;
             min-width: 350px;
-            background: white;
+            background: #1e293b;
             border-radius: 4px;
             padding: 15px;
             box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.1);
@@ -136,10 +136,10 @@ class CompactHTMLTestReportGenerator:
             text-align: center;
             font-weight: 500;
             margin-bottom: 15px;
-            color: #303133;
+            color: #e5e7eb;
             font-size: 15px;
             padding-bottom: 10px;
-            border-bottom: 1px solid #EBEEF5;
+            border-bottom: 1px solid #334155;
         }}
 
         .chart-wrapper {{
@@ -161,7 +161,7 @@ class CompactHTMLTestReportGenerator:
 
         .test-group-header {{
             padding: 10px 15px;
-            background: #f0f7ff;
+            background: #172554;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -171,12 +171,12 @@ class CompactHTMLTestReportGenerator:
         }}
 
         .test-group-header:hover {{
-            background: #e0f0ff;
+            background: #1e3a8a;
         }}
 
         .test-group-title {{
             font-weight: 500;
-            color: #303133;
+            color: #e5e7eb;
         }}
 
         .test-group-summary {{
@@ -197,7 +197,7 @@ class CompactHTMLTestReportGenerator:
 
         .test-group-content {{
             display: none;
-            background: white;
+            background: #1e293b;
             padding: 8px 0;
         }}
 
@@ -207,7 +207,7 @@ class CompactHTMLTestReportGenerator:
 
         .test-case {{
             margin: 8px;
-            border: 1px solid #EBEEF5;
+            border: 1px solid #334155;
             border-radius: 4px;
             overflow: hidden;
             transition: all 0.3s;
@@ -220,7 +220,7 @@ class CompactHTMLTestReportGenerator:
 
         .test-case-header {{
             padding: 10px 12px;
-            background: #f8f9fa;
+            background: #111827;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -239,23 +239,23 @@ class CompactHTMLTestReportGenerator:
         }}
 
         .status-passed {{
-            background-color: #f0f9eb;
+            background-color: rgba(34, 197, 94, 0.16);
             color: #67C23A;
         }}
 
         .status-failed {{
-            background-color: #fef0f0;
+            background-color: rgba(239, 68, 68, 0.16);
             color: #F56C6C;
         }}
 
         .status-skipped {{
-            background-color: #fdf6ec;
+            background-color: rgba(245, 158, 11, 0.16);
             color: #E6A23C;
         }}
 
         .test-case-content {{
             display: none;
-            background: white;
+            background: #1e293b;
         }}
 
         .test-case-content.active {{
@@ -264,7 +264,7 @@ class CompactHTMLTestReportGenerator:
 
         .section {{
             padding: 12px;
-            border-bottom: 1px solid #EBEEF5;
+            border-bottom: 1px solid #334155;
         }}
 
         .section:last-child {{
@@ -274,7 +274,7 @@ class CompactHTMLTestReportGenerator:
         .section-title {{
             font-weight: 500;
             margin-bottom: 8px;
-            color: #303133;
+            color: #e5e7eb;
             font-size: 13px;
         }}
 
@@ -287,26 +287,26 @@ class CompactHTMLTestReportGenerator:
         .param-table th, .param-table td {{
             padding: 6px 8px;
             text-align: left;
-            border: 1px solid #EBEEF5;
+            border: 1px solid #334155;
         }}
 
         .param-table th {{
-            background-color: #f5f7fa;
+            background-color: #0f172a;
             font-weight: 500;
-            color: #909399;
+            color: #94a3b8;
         }}
 
         .log-entry {{
             margin-bottom: 5px;
             padding: 5px 8px;
             border-left: 3px solid #409EFF;
-            background-color: #f5f7fa;
+            background-color: #0f172a;
             font-size: 12px;
             border-radius: 2px;
         }}
 
         .log-time {{
-            color: #909399;
+            color: #94a3b8;
             font-size: 11px;
             margin-right: 8px;
         }}
@@ -317,12 +317,12 @@ class CompactHTMLTestReportGenerator:
 
         .log-level-error {{
             border-left-color: #F56C6C;
-            background-color: #fef0f0;
+            background-color: rgba(239, 68, 68, 0.16);
         }}
 
         .log-level-warning {{
             border-left-color: #E6A23C;
-            background-color: #fdf6ec;
+            background-color: rgba(245, 158, 11, 0.16);
         }}
 
         .response-section {{
@@ -338,7 +338,7 @@ class CompactHTMLTestReportGenerator:
         }}
 
         pre {{
-            background: #f5f7fa;
+            background: #0f172a;
             padding: 8px;
             border-radius: 4px;
             overflow-x: auto;
@@ -352,7 +352,7 @@ class CompactHTMLTestReportGenerator:
 
         .timestamp {{
             text-align: right;
-            color: #909399;
+            color: #94a3b8;
             font-size: 12px;
             margin-top: 15px;
         }}
@@ -360,6 +360,24 @@ class CompactHTMLTestReportGenerator:
         .collapse-all {{
             text-align: right;
             margin-bottom: 12px;
+        }}
+
+        .el-card {{
+            background-color: #1e293b;
+            border-color: #334155;
+            color: #e5e7eb;
+        }}
+
+        .el-button {{
+            background-color: #0f172a;
+            border-color: #475569;
+            color: #e5e7eb;
+        }}
+
+        .el-button:hover {{
+            background-color: #1e3a8a;
+            border-color: #60a5fa;
+            color: #dbeafe;
         }}
 
         @media (max-width: 768px) {{
@@ -821,7 +839,8 @@ class CompactHTMLTestReportGenerator:
                                     pointStyle: 'circle',
                                     font: {{
                                         size: 12
-                                    }}
+                                    }},
+                                    color: '#cbd5e1'
                                 }}
                             }},
                             tooltip: {{
@@ -892,7 +911,8 @@ class CompactHTMLTestReportGenerator:
                                 ticks: {{
                                     font: {{
                                         size: 11
-                                    }}
+                                    }},
+                                    color: '#cbd5e1'
                                 }}
                             }},
                             y: {{
@@ -902,10 +922,11 @@ class CompactHTMLTestReportGenerator:
                                     precision: 0,
                                     font: {{
                                         size: 11
-                                    }}
+                                    }},
+                                    color: '#cbd5e1'
                                 }},
                                 grid: {{
-                                    color: '#EBEEF5'
+                                    color: '#334155'
                                 }}
                             }}
                         }},
@@ -918,7 +939,8 @@ class CompactHTMLTestReportGenerator:
                                     pointStyle: 'circle',
                                     font: {{
                                         size: 12
-                                    }}
+                                    }},
+                                    color: '#cbd5e1'
                                 }}
                             }},
                             tooltip: {{

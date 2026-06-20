@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AuroraTest - 测试报告</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <link rel="stylesheet" href="/web/assets/common.css?v=16">
+</head>
+<body class="min-h-screen">
+<div id="app" v-cloak></div>
+<script src="/web/assets/common.js?v=16"></script>
+<script>
+const { createApp, ref, onMounted } = Vue;
+createApp({
+  template: shellTemplate(`
+    <div class="h-full grid grid-cols-12 gap-6">
+      <div class="col-span-4 bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col min-h-0">
+        <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+          <h3 class="font-semibold text-gray-800">执行历史</h3>
+          <button @click="loadReportHistory" :disabled="loadingReport" class="text-blue-600 hover:text-blue-700 flex items-center disabled:opacity-50"><i class="fas fa-sync-alt mr-1"></i>刷新</button>
+        </div>
+        <div v-if="!reportHistory.length && !loadingReport" class="flex-1 flex items-center justify-center text-gray-400 p-6 text-center">
+          <div><i class="fas fa-file-alt text-5xl mb-4"></i><p>暂无执行记录</p><p class="text-sm mt-2">请先在执行测试页面运行用例</p></div>
+        </div>
+        <div class="flex-1 overflow-auto p-3 space-y-3">
+          <button v-for="record in reportHistory" :key="record.id" @click="selectReport(record.id)"
+            :class="['w-full text-left rounded-xl border p-4 transition', selectedReportId === record.id ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200 hover:bg-gray-100']">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-semibold text-gray-800">{{ record.created_at || record.id }}</span>
+              <span class="text-xs text-gray-500">{{ (record.size / 1024).toFixed(1) }} KB</span>
+            </div>
+            <div class="grid grid-cols-4 gap-2 text-xs">
+              <span class="text-gray-500">总 {{ record.summary.total || 0 }}</span>
+              <span class="text-green-600">过 {{ record.summary.passed || 0 }}</span>
+              <span class="text-red-600">败 {{ record.summary.failed || 0 }}</span>
+              <span class="text-yellow-500">跳 {{ record.summary.skipped || 0 }}</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <div class="col-span-8 bg-white rounded-xl shadow-sm overflow-hidden flex flex-col min-h-0">
+        <div class="flex items-center justify-between p-4 border-b border-gray-200">
+          <div>
+            <h3 class="text-lg font-semibold text-gray-800">测试报告</h3>
+            <p v-if="htmlReport" class="text-sm text-gray-500 mt-1">生成时间: {{ htmlReport.created_at || htmlReport.modified_time }}</p>
+          </div>
+          <button @click="downloadHtmlReport" :disabled="!htmlReport" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center disabled:opacity-50"><i class="fas fa-download mr-2"></i>下载 HTML 报告</button>
+        </div>
+        <div v-if="htmlReport" class="flex-1 min-h-0">
+          <iframe class="w-full h-full" style="border: none;" :srcdoc="htmlReport.content"></iframe>
+        </div>
+        <div v-if="!htmlReport && !loadingReport" class="flex-1 flex items-center justify-center text-center py-16">
+          <div><i class="fas fa-file-alt text-6xl text-gray-300 mb-4"></i><p class="text-gray-500">请选择一条执行记录</p><a href="/web/execute.html" class="inline-block mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">去执行测试</a></div>
+        </div>
+        <div v-if="loadingReport" class="flex-1 flex items-center justify-center"><div class="text-center"><div class="loading-spinner mx-auto w-10 h-10 border-4"></div><p class="text-gray-500 mt-4">正在加载报告...</p></div></div>
+      </div>
+    </div>
+  `),
+  setup() {
+    const shell = pageShell('reports', '测试报告');
+    const reportHistory = ref([]);
+    const htmlReport = ref(null);
+    const loadingReport = ref(false);
+    const selectedReportId = ref('');
+
+    const loadReportHistory = async () => {
+      loadingReport.value = true;
+      try {
+        reportHistory.value = await api('/reports');
+        if (reportHistory.value.length) {
+          await selectReport(reportHistory.value[0].id);
+        } else {
+          htmlReport.value = null;
+          selectedReportId.value = '';
+        }
+      } finally {
+        loadingReport.value = false;
+      }
+    };
+
+    const selectReport = async (reportId) => {
+      selectedReportId.value = reportId;
+      loadingReport.value = true;
+      try {
+        htmlReport.value = await api(`/reports/${reportId}`);
+      } finally {
+        loadingReport.value = false;
+      }
+    };
+
+    const downloadHtmlReport = async () => {
+      if (!selectedReportId.value) return;
+      const response = await fetch(`/api/reports/${selectedReportId.value}/download`, { headers: { Authorization: `Bearer ${getToken()}` } });
+      if (!response.ok) return alert('下载失败');
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `test-report-${selectedReportId.value}.html`;
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+
+    onMounted(async () => { await shell.initShell(); await loadReportHistory(); });
+    return { ...shell, reportHistory, htmlReport, loadingReport, selectedReportId, loadReportHistory, selectReport, downloadHtmlReport };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>

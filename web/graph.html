@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AuroraTest - 依赖关系图</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <link rel="stylesheet" href="/web/assets/common.css?v=16">
+</head>
+<body class="min-h-screen">
+<div id="app" v-cloak></div>
+<script src="/web/assets/common.js?v=16"></script>
+<script>
+const { createApp, ref, onMounted, nextTick } = Vue;
+
+createApp({
+  template: shellTemplate(`
+    <div class="h-full grid grid-cols-12 gap-6">
+      <div class="col-span-8 bg-white rounded-xl shadow-sm p-4 flex flex-col min-h-0">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-gray-800">测试用例依赖关系图</h3>
+          <div class="flex items-center space-x-3">
+            <select v-model="selectedGraphNode" @change="highlightNode" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm outline-none"><option value="">展示全部节点</option><option v-for="node in graphData.nodes" :key="node" :value="node">{{ node }}</option></select>
+            <button @click="loadGraphData" :disabled="loadingGraph" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm flex items-center disabled:opacity-50"><i v-if="loadingGraph" class="fas fa-spinner fa-spin mr-1"></i><i v-else class="fas fa-sync-alt mr-1"></i>刷新</button>
+          </div>
+        </div>
+        <div ref="graphContainer" class="flex-1 min-h-0 border border-gray-200 rounded-lg overflow-hidden"></div>
+      </div>
+      <div class="col-span-4 bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col min-h-0">
+        <div class="px-5 py-4 border-b border-gray-200 flex items-center justify-between"><h3 class="font-semibold text-gray-800">节点信息</h3><button v-if="selectedNodeInfo" @click="jumpToTestCase(selectedNodeInfo.name)" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm flex items-center"><i class="fas fa-location-arrow mr-1.5"></i>跳转</button></div>
+        <div v-if="!selectedNodeInfo" class="flex-1 flex items-center justify-center text-gray-400 p-8"><div class="text-center"><i class="fas fa-mouse-pointer text-5xl mb-4"></i><p>点击左侧图中的节点</p><p class="text-sm mt-2">右侧将展示该用例的完整信息</p></div></div>
+        <div v-else class="flex-1 overflow-auto p-5 space-y-4">
+          <div><div class="text-xs text-gray-500 mb-1">节点名称</div><div class="text-lg font-semibold text-gray-800 break-all">{{ selectedNodeInfo.name }}</div></div>
+          <div class="grid grid-cols-2 gap-3 text-sm"><div class="bg-gray-50 rounded-lg p-3"><div class="text-xs text-gray-500 mb-1">类型</div><div class="text-gray-800">{{ selectedNodeInfo.content.inter_type || '-' }}</div></div><div class="bg-gray-50 rounded-lg p-3"><div class="text-xs text-gray-500 mb-1">方法</div><div class="text-gray-800">{{ selectedNodeInfo.content.method || '-' }}</div></div></div>
+          <div v-for="item in detailItems" :key="item.key"><div class="text-xs text-gray-500 mb-1">{{ item.label }}</div><div class="text-sm text-gray-800 bg-gray-50 rounded-lg p-3 break-all">{{ item.value || '-' }}</div></div>
+          <div><div class="text-xs text-gray-500 mb-1">前置依赖</div><div class="text-sm text-gray-800 bg-gray-50 rounded-lg p-3 break-all">{{ selectedNodeInfo.ancestors.length ? selectedNodeInfo.ancestors.join(', ') : '-' }}</div></div>
+          <div v-for="block in jsonBlocks" :key="block.label"><div class="text-xs text-gray-500 mb-1">{{ block.label }}</div><pre class="bg-gray-900 text-gray-100 rounded-lg p-3 overflow-auto max-h-40 text-xs">{{ JSON.stringify(block.value || {}, null, 2) }}</pre></div>
+        </div>
+      </div>
+    </div>
+  `),
+  setup() {
+    const shell = pageShell('graph', '依赖关系图');
+    const testCases = ref([]);
+    const graphData = ref({ nodes: [], edges: [], node_positions: {}, case_details: {}, barrels: {} });
+    const loadingGraph = ref(false);
+    const graphContainer = ref(null);
+    const selectedGraphNode = ref('');
+    const selectedNodeInfo = ref(null);
+
+    const findAncestors = node => {
+      const result = new Set();
+      const stack = [node];
+      while (stack.length) {
+        const current = stack.pop();
+        for (const [start, end] of graphData.value.edges) if (end === current && !result.has(start)) { result.add(start); stack.push(start); }
+      }
+      return Array.from(result).filter(item => item !== '_');
+    };
+    const findDescendants = node => {
+      const result = new Set();
+      const stack = [node];
+      while (stack.length) {
+        const current = stack.pop();
+        for (const [start, end] of graphData.value.edges) if (start === current && !result.has(end)) { result.add(end); stack.push(end); }
+      }
+      return Array.from(result).filter(item => item !== '_');
+    };
+    const findRelatedNodes = node => Array.from(new Set([...findAncestors(node), ...findDescendants(node), node]));
+
+    const renderGraph = (visibleNodes = null, highlightNodes = null) => {
+      if (!graphContainer.value || !window.Plotly) return;
+      const { node_positions, edges, nodes } = graphData.value;
+      const visibleSet = visibleNodes ? new Set(visibleNodes) : null;
+      const highlightSet = highlightNodes ? new Set(highlightNodes) : null;
+      const x = [], y = [], text = [], colors = [];
+      for (const node of nodes) {
+        if (node === '_' || (visibleSet && !visibleSet.has(node))) continue;
+        const pos = node_positions[node];
+        if (!pos) continue;
+        x.push(pos[0]); y.push(pos[1]); text.push(node); colors.push(highlightSet && highlightSet.has(node) ? '#f97316' : '#93c5fd');
+      }
+      const edgeX = [], edgeY = [];
+      for (const [start, end] of edges) {
+        if (start === '_' || end === '_' || (visibleSet && (!visibleSet.has(start) || !visibleSet.has(end)))) continue;
+        const s = node_positions[start], e = node_positions[end];
+        if (s && e) { edgeX.push(s[0], e[0], null); edgeY.push(s[1], e[1], null); }
+      }
+      const traces = [
+        { x: edgeX, y: edgeY, mode: 'lines', line: { color: '#6b7280', width: 1.5 }, type: 'scatter', hoverinfo: 'none' },
+        { x, y, text, mode: 'markers+text', textposition: 'top center', marker: { size: 20, color: colors }, type: 'scatter', hoverinfo: 'text' }
+      ];
+      Plotly.newPlot(graphContainer.value, traces, { showlegend: false, xaxis: { showgrid: false, zeroline: false, visible: false, range: [0,4] }, yaxis: { showgrid: false, zeroline: false, visible: false, range: [0,4] }, plot_bgcolor: 'white', margin: { l: 20, r: 20, t: 20, b: 20 } }, { responsive: true });
+      graphContainer.value.on('plotly_click', data => { if (data.points?.length) highlightNode(null, data.points[0].text); });
+    };
+    const highlightNode = (_, nodeName = null) => {
+      const node = nodeName || selectedGraphNode.value;
+      if (!node) { selectedNodeInfo.value = null; renderGraph(); return; }
+      selectedGraphNode.value = node;
+      const ancestors = findAncestors(node);
+      const related = findRelatedNodes(node);
+      selectedNodeInfo.value = { name: node, content: graphData.value.case_details[node] || {}, ancestors };
+      renderGraph(related, related);
+    };
+    const loadGraphData = async () => { loadingGraph.value = true; try { await loadScriptOnce('https://cdn.plot.ly/plotly-2.27.0.min.js'); graphData.value = await api('/graph/data'); await nextTick(); renderGraph(); } finally { loadingGraph.value = false; } };
+    const loadTestCases = async () => { testCases.value = await api('/testcases'); };
+    const jumpToTestCase = caseName => {
+      for (const file of testCases.value) {
+        if (file.cases.find(item => item.name === caseName)) {
+          window.location.href = `/web/testcases.html?file=${encodeURIComponent(file.path)}&case=${encodeURIComponent(caseName)}`;
+          return;
+        }
+      }
+      alert(`未找到用例: ${caseName}`);
+    };
+    const detailItems = Vue.computed(() => selectedNodeInfo.value ? [
+      { key: 'desc', label: '描述', value: selectedNodeInfo.value.content.desc },
+      { key: 'domain', label: 'Domain', value: selectedNodeInfo.value.content.domain },
+      { key: 'url', label: 'URL', value: selectedNodeInfo.value.content.url },
+      { key: 'plc', label: 'PLC', value: selectedNodeInfo.value.content.plc }
+    ] : []);
+    const jsonBlocks = Vue.computed(() => selectedNodeInfo.value ? [
+      { label: 'Headers', value: selectedNodeInfo.value.content.headers },
+      { label: 'Data', value: selectedNodeInfo.value.content.data },
+      { label: 'Extracts', value: selectedNodeInfo.value.content.extracts },
+      { label: 'Asserts', value: selectedNodeInfo.value.content.asserts }
+    ] : []);
+    onMounted(async () => { await shell.initShell(); await loadTestCases(); await loadGraphData(); });
+    return { ...shell, graphData, loadingGraph, graphContainer, selectedGraphNode, selectedNodeInfo, detailItems, jsonBlocks, loadGraphData, highlightNode, jumpToTestCase };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>

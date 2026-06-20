@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AuroraTest - Hook 函数</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/lib/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/theme/material-darker.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/addon/hint/show-hint.min.css">
+  <link rel="stylesheet" href="/web/assets/common.css?v=16">
+</head>
+<body class="min-h-screen">
+<div id="app" v-cloak></div>
+<script src="/web/assets/common.js?v=16"></script>
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/lib/codemirror.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/mode/python/python.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/addon/hint/show-hint.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/addon/edit/matchbrackets.min.js"></script>
+<script>
+const { createApp, ref, computed, onMounted } = Vue;
+
+createApp({
+  template: shellTemplate(`
+    <div class="space-y-6">
+      <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div class="bg-gradient-to-r from-blue-500 to-indigo-600 px-6 py-4 flex items-center justify-between">
+          <div class="flex items-center">
+            <i class="fas fa-code text-white text-2xl mr-3"></i>
+            <div>
+              <h3 class="text-lg font-semibold text-white">hook_func.py 编辑器</h3>
+              <p class="text-white text-sm" style="opacity:.85">编写自定义函数，在用例中通过 \${func.xxx()} 调用</p>
+            </div>
+          </div>
+          <span class="text-white text-sm">最后修改: {{ modifiedTime || '-' }}</span>
+        </div>
+
+        <div class="p-6">
+          <div class="flex items-center justify-between mb-4 pb-4 border-b border-gray-100">
+            <div class="flex items-center space-x-3">
+              <button @click="loadHookFile" :disabled="loading" class="text-blue-600 hover:text-blue-700 flex items-center disabled:opacity-50">
+                <i class="fas fa-sync-alt mr-1"></i>刷新
+              </button>
+              <button @click="validateHookFile" :disabled="!content || validating" class="bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 disabled:opacity-50">
+                <i class="fas fa-check mr-1"></i>{{ validating ? '校验中...' : '语法校验' }}
+              </button>
+              <button @click="saveHookFile" :disabled="!content || saving" class="bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50">
+                <i class="fas fa-save mr-1"></i>{{ saving ? '保存中...' : '保存' }}
+              </button>
+            </div>
+            <div class="text-sm text-gray-500">保存时会自动备份当前 hook_func.py</div>
+          </div>
+
+          <div v-if="message" :class="['mb-4 rounded-lg p-3 border text-sm', messageType === 'error' ? 'bg-red-50 border-red-200 text-red-600' : 'bg-green-50 border-green-200 text-green-600']">
+            {{ message }}
+          </div>
+
+          <div class="grid grid-cols-12 gap-6">
+            <div class="col-span-8">
+              <div class="border border-gray-200 rounded-lg overflow-hidden">
+                <div class="bg-gray-50 px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+                  <h4 class="font-medium text-gray-800">代码编辑区</h4>
+                  <span class="text-xs text-gray-500">{{ lineCount }} 行</span>
+                </div>
+                <textarea ref="editorTextarea" v-model="content" spellcheck="false" class="w-full yaml-editor outline-none" style="height: 62vh; resize: vertical; border: none; border-radius: 0; padding: 14px; tab-size: 4;"></textarea>
+              </div>
+            </div>
+
+            <div class="col-span-4 space-y-4">
+              <div class="bg-gray-50 rounded-xl border border-gray-200 p-4">
+                <h4 class="font-semibold text-gray-800 mb-3">使用说明</h4>
+                <div class="space-y-3 text-sm text-gray-500">
+                  <p>1. 自定义函数写在 <span class="text-blue-500">HookFunc</span> 类中。</p>
+                  <p>2. 静态方法可在用例中这样使用：</p>
+                  <pre class="bg-gray-900 text-gray-100 rounded-lg p-3 overflow-auto text-xs">\${func.hash_password(cache._password)}</pre>
+                  <p>3. 可重写 before_case / after_case 做前后置处理。</p>
+                  <p>4. 保存前会自动做 Python 语法校验。</p>
+                </div>
+              </div>
+
+              <div class="bg-gray-50 rounded-xl border border-gray-200 p-4">
+                <h4 class="font-semibold text-gray-800 mb-3">常用模板</h4>
+                <button @click="insertSnippet('static')" class="w-full mb-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100">插入静态函数模板</button>
+                <button @click="insertSnippet('before')" class="w-full mb-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100">插入 before_case 模板</button>
+                <button @click="insertSnippet('after')" class="w-full bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100">插入 after_case 模板</button>
+              </div>
+
+              <div class="bg-gray-50 rounded-xl border border-gray-200 p-4">
+                <h4 class="font-semibold text-gray-800 mb-3">当前可用函数</h4>
+                <div v-if="functions.length" class="space-y-2">
+                  <div v-for="fn in functions" :key="fn" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-800">
+                    {{ fn }}
+                  </div>
+                </div>
+                <p v-else class="text-sm text-gray-500">暂无解析结果，保存后可刷新查看。</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `),
+  setup() {
+    const shell = pageShell('hooks', 'Hook 函数');
+    const content = ref('');
+    const modifiedTime = ref('');
+    const loading = ref(false);
+    const saving = ref(false);
+    const validating = ref(false);
+    const message = ref('');
+    const messageType = ref('success');
+    const editorTextarea = ref(null);
+    let codeEditor = null;
+
+    const lineCount = computed(() => content.value ? content.value.split('\n').length : 0);
+    const functions = computed(() => {
+      const matches = [...content.value.matchAll(/^\s+def\s+([a-zA-Z_]\w*)\s*\(/gm)];
+      return matches.map(item => item[1]).filter(name => !['before_case', 'after_case'].includes(name));
+    });
+
+    const showMessage = (text, type = 'success') => {
+      message.value = text;
+      messageType.value = type;
+    };
+
+    const loadHookFile = async () => {
+      loading.value = true;
+      try {
+        const data = await api('/hook-file');
+        content.value = data.content;
+        if (codeEditor && codeEditor.getValue() !== data.content) codeEditor.setValue(data.content);
+        modifiedTime.value = data.modified_time;
+        showMessage('hook_func.py 已加载');
+      } catch (error) {
+        showMessage('加载失败: ' + error.message, 'error');
+      } finally {
+        loading.value = false;
+      }
+    };
+
+    const validateHookFile = async () => {
+      validating.value = true;
+      try {
+        const data = await api('/hook-file/validate', { method: 'POST', body: JSON.stringify({ content: content.value }) });
+        showMessage(data.message, data.success ? 'success' : 'error');
+      } catch (error) {
+        showMessage('校验失败: ' + error.message, 'error');
+      } finally {
+        validating.value = false;
+      }
+    };
+
+    const saveHookFile = async () => {
+      saving.value = true;
+      try {
+        const data = await api('/hook-file', { method: 'PUT', body: JSON.stringify({ content: content.value }) });
+        showMessage(`${data.message}，备份文件: ${data.backup}`);
+        await loadHookFile();
+      } catch (error) {
+        showMessage('保存失败: ' + error.message, 'error');
+      } finally {
+        saving.value = false;
+      }
+    };
+
+    const insertSnippet = (type) => {
+      const snippets = {
+        static: `\n    @staticmethod\n    def your_func(value):\n        return value\n`,
+        before: `\n    @classmethod\n    def before_case(cls) -> None:\n        pass\n`,
+        after: `\n    @classmethod\n    def after_case(cls) -> None:\n        pass\n`
+      };
+      const snippet = snippets[type] || '';
+      if (codeEditor) {
+        codeEditor.replaceSelection(snippet);
+        content.value = codeEditor.getValue();
+        codeEditor.focus();
+      } else {
+        content.value += snippet;
+      }
+    };
+
+    const initCodeEditor = () => {
+      if (!window.CodeMirror || !editorTextarea.value || codeEditor) return;
+
+      const pythonKeywords = ['class', 'def', 'return', 'import', 'from', 'as', 'if', 'elif', 'else', 'for', 'while', 'try', 'except', 'finally', 'with', 'pass', 'raise', 'True', 'False', 'None', 'staticmethod', 'classmethod'];
+      const hookWords = ['HookFunc', 'HookBase', 'before_case', 'after_case', 'cls.case', 'headers', 'data', 'extracts', 'asserts', 'cache', 'func'];
+      const snippets = ['@staticmethod', '@classmethod', 'def your_func(value):', 'return value', 'cls.case.headers', 'cls.case.data'];
+
+      CodeMirror.registerHelper('hint', 'pythonHook', function(editor) {
+        const cursor = editor.getCursor();
+        const token = editor.getTokenAt(cursor);
+        const start = token.start;
+        const end = cursor.ch;
+        const current = token.string.trim();
+        const dynamicFunctions = functions.value;
+        const words = [...new Set([...pythonKeywords, ...hookWords, ...snippets, ...dynamicFunctions])];
+        const list = words
+          .filter(word => !current || word.toLowerCase().includes(current.toLowerCase()))
+          .sort()
+          .map(word => ({ text: word, displayText: word }));
+        return { list, from: CodeMirror.Pos(cursor.line, start), to: CodeMirror.Pos(cursor.line, end) };
+      });
+
+      codeEditor = CodeMirror.fromTextArea(editorTextarea.value, {
+        mode: 'python',
+        theme: 'material-darker',
+        lineNumbers: true,
+        indentUnit: 4,
+        tabSize: 4,
+        indentWithTabs: false,
+        matchBrackets: true,
+        extraKeys: {
+          'Ctrl-Space': 'autocomplete',
+          'Ctrl-S': function(cm) { content.value = cm.getValue(); saveHookFile(); },
+          'Cmd-S': function(cm) { content.value = cm.getValue(); saveHookFile(); },
+          'Tab': function(cm) {
+            if (cm.state.completionActive) return CodeMirror.Pass;
+            cm.replaceSelection('    ', 'end');
+          }
+        },
+        hintOptions: { hint: CodeMirror.hint.pythonHook, completeSingle: false }
+      });
+
+      codeEditor.setSize('100%', '62vh');
+      codeEditor.on('change', cm => {
+        content.value = cm.getValue();
+      });
+      codeEditor.on('inputRead', cm => {
+        if (!cm.state.completionActive) cm.showHint({ hint: CodeMirror.hint.pythonHook, completeSingle: false });
+      });
+    };
+
+    onMounted(async () => {
+      await shell.initShell();
+      initCodeEditor();
+      await loadHookFile();
+    });
+
+    return { ...shell, content, modifiedTime, loading, saving, validating, message, messageType, editorTextarea, lineCount, functions, loadHookFile, validateHookFile, saveHookFile, insertSnippet };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>
