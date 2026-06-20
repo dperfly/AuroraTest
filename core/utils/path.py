@@ -18,7 +18,7 @@ def data_path(case_folder_name):
 
 def log_path():
     """ 获取日志路径 """
-    path = os.path.join(root_path(), "logs")
+    path = os.path.join(root_path(), "log", "logs")
     if not os.path.exists(path):
         os.makedirs(path)
     return path
@@ -26,7 +26,15 @@ def log_path():
 
 def report_path():
     """ 获取报告路径 """
-    path = os.path.join(root_path(), "report")
+    path = os.path.join(root_path(), "log", "reports")
+    if not os.path.exists(path):
+        os.makedirs(path)
+    return path
+
+
+def hook_backup_path():
+    """ 获取 hook_func.py 备份路径 """
+    path = os.path.join(root_path(), "log", "hook_backups")
     if not os.path.exists(path):
         os.makedirs(path)
     return path

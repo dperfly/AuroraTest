@@ -27,7 +27,10 @@ class ReaderCase:
         cases = {}
         yaml_filepaths = self.get_all_yaml_files()
         for filepath in yaml_filepaths:
-            new_cases = self.read_yaml(filepath)
+            try:
+                new_cases = self.read_yaml(filepath)
+            except AttributeError:
+                continue
 
             # 需要判断case名字是否存在，如果存在相同的则抛异常
             if common_keys := set(cases.keys()) & set(new_cases.keys()):

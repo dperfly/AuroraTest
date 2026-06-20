@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AuroraTest - 测试用例</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <link rel="stylesheet" href="/web/assets/common.css?v=16">
+</head>
+<body class="min-h-screen">
+<div id="app" v-cloak></div>
+<script src="/web/assets/common.js?v=16"></script>
+<script>
+const { createApp, ref, computed, onMounted } = Vue;
+
+createApp({
+  template: shellTemplate(`
+    <div class="flex h-full gap-6">
+      <div class="w-80 bg-white rounded-xl shadow-sm flex flex-col">
+        <div class="p-4 border-b border-gray-200"><div class="relative"><i class="fas fa-search absolute left-3 top-2.5 text-gray-400"></i><input v-model="searchKeyword" type="text" placeholder="搜索用例..." class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"></div></div>
+        <div class="flex-1 overflow-auto p-2">
+          <div v-for="file in filteredTestCases" :key="file.path" class="mb-2">
+            <div class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-50 rounded-lg" @click="toggleFileExpand(file.path)"><i :class="expandedFiles.includes(file.path) ? 'fas fa-chevron-down' : 'fas fa-chevron-right'" class="mr-2 text-xs"></i><i class="fas fa-folder mr-2 text-yellow-500"></i>{{ file.path }}</div>
+            <div v-if="expandedFiles.includes(file.path)" class="ml-4">
+              <div v-for="caseItem in file.cases" :key="caseItem.name" @click="selectTestCase(file.path, caseItem)" :class="['tree-item flex items-center px-3 py-2 text-sm cursor-pointer rounded-lg', selectedCase?.name === caseItem.name ? 'active' : 'text-gray-600']"><i :class="getCaseIcon(caseItem.inter_type)" class="mr-2"></i><span class="truncate">{{ caseItem.name }}</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex-1 bg-white rounded-xl shadow-sm flex flex-col">
+        <div v-if="selectedCase" class="h-full flex flex-col">
+          <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+            <div><h3 class="font-semibold text-gray-800">{{ editingCase.name || selectedCase.name }}</h3><p class="text-sm text-gray-500">{{ selectedCaseFile }}</p></div>
+            <div class="flex items-center space-x-2">
+              <button v-if="!isEditing" @click="startEditing" class="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center"><i class="fas fa-edit mr-1"></i>编辑</button>
+              <template v-else><button @click="cancelEditing" class="px-3 py-1.5 text-sm border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition">取消</button><button @click="saveTestCase" :disabled="savingCase" class="px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center disabled:opacity-50"><div v-if="savingCase" class="loading-spinner mr-1"></div>保存</button></template>
+              <button @click="deleteTestCase" class="px-3 py-1.5 text-sm bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"><i class="fas fa-trash"></i></button>
+            </div>
+          </div>
+          <div class="flex-1 overflow-auto p-4">
+            <div v-if="!isEditing" class="space-y-4">
+              <div class="grid grid-cols-2 gap-4"><div><label class="block text-sm font-medium text-gray-500 mb-1">描述</label><p class="text-gray-800">{{ selectedCase.desc || '-' }}</p></div><div><label class="block text-sm font-medium text-gray-500 mb-1">接口类型</label><span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm">{{ selectedCase.inter_type }}</span></div></div>
+              <div v-if="caseDetailContent" class="border-t border-gray-200 pt-4"><h4 class="font-medium text-gray-800 mb-3">用例配置</h4><pre class="yaml-editor bg-gray-900 text-gray-100 p-4 rounded-lg overflow-auto max-h-96">{{ JSON.stringify(caseDetailContent, null, 2) }}</pre></div>
+            </div>
+            <div v-else class="space-y-4">
+              <div class="grid grid-cols-2 gap-4"><div><label class="block text-sm font-medium text-gray-700 mb-1">用例名称</label><input v-model="editingCase.name" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none"></div><div><label class="block text-sm font-medium text-gray-700 mb-1">接口类型</label><select v-model="editingCase.inter_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none"><option value="http">HTTP</option><option value="mysql">MySQL</option><option value="redis">Redis</option><option value="ws">WebSocket</option></select></div></div>
+              <div><label class="block text-sm font-medium text-gray-700 mb-1">描述</label><input v-model="editingCase.desc" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none"></div>
+              <div class="grid grid-cols-2 gap-4"><div><label class="block text-sm font-medium text-gray-700 mb-1">Domain</label><input v-model="editingCase.domain" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none" placeholder="\${cache._domain}"></div><div><label class="block text-sm font-medium text-gray-700 mb-1">URL 路径</label><input v-model="editingCase.url" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none"></div></div>
+              <div class="grid grid-cols-2 gap-4"><div><label class="block text-sm font-medium text-gray-700 mb-1">请求方法</label><select v-model="editingCase.method" class="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none"><option value="GET">GET</option><option value="POST">POST</option><option value="PUT">PUT</option><option value="DELETE">DELETE</option><option value="PATCH">PATCH</option></select></div><div><label class="block text-sm font-medium text-gray-700 mb-1">PLC</label><input v-model="editingCase.plc" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none" placeholder="for _ in range(3)"></div></div>
+              <div><label class="block text-sm font-medium text-gray-700 mb-2">Headers(JSON)</label><textarea v-model="editingCase.headersStr" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg yaml-editor outline-none"></textarea></div>
+              <div><label class="block text-sm font-medium text-gray-700 mb-1">请求体</label><textarea v-model="editingCase.data.body" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg yaml-editor outline-none"></textarea></div>
+              <div class="grid grid-cols-2 gap-4"><div><label class="block text-sm font-medium text-gray-700 mb-2">Extracts(JSON)</label><textarea v-model="editingCase.extractsStr" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg yaml-editor outline-none"></textarea></div><div><label class="block text-sm font-medium text-gray-700 mb-2">Asserts(JSON)</label><textarea v-model="editingCase.assertsStr" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg yaml-editor outline-none"></textarea></div></div>
+              <div><label class="block text-sm font-medium text-gray-700 mb-2">前置用例(逗号分隔)</label><input v-model="editingCase.beforeCasesStr" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none"></div>
+            </div>
+          </div>
+        </div>
+        <div v-else class="h-full flex items-center justify-center text-gray-400"><div class="text-center"><i class="fas fa-file-alt text-6xl mb-4"></i><p>请从左侧选择一个测试用例</p><p class="text-sm mt-2">或点击“新建用例”创建新的测试用例</p></div></div>
+      </div>
+    </div>
+
+    <div v-if="showCreateModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4">
+        <div class="p-6 border-b border-gray-200"><h3 class="text-lg font-semibold text-gray-800">新建测试用例</h3><p class="text-sm text-gray-500 mt-1">可创建文件夹、YAML 文件并写入新用例</p></div>
+        <div class="p-6 space-y-5">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label class="block text-sm font-medium text-gray-700 mb-1">选择文件夹</label><select v-model="newCase.dir_path" class="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none"><option v-for="dir in testcaseDirs" :key="dir" :value="dir">{{ dir === '.' ? 'testcase 根目录' : dir }}</option></select></div><div><label class="block text-sm font-medium text-gray-700 mb-1">新建文件夹</label><div class="flex space-x-2"><input v-model="newDirPath" type="text" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg outline-none" placeholder="例如: api/user"><button @click="createTestcaseDir" :disabled="!newDirPath" class="px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 disabled:opacity-50">创建</button></div></div></div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label class="block text-sm font-medium text-gray-700 mb-1">选择 YAML 文件</label><select v-model="newCase.file_path" class="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none"><option value="">请选择 YAML 文件</option><option v-for="file in testCases" :key="file.path" :value="file.path">{{ file.path }}</option></select></div><div><label class="block text-sm font-medium text-gray-700 mb-1">新建 YAML 文件</label><div class="flex space-x-2"><input v-model="newYamlName" type="text" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg outline-none" placeholder="例如: login 或 api/user/login.yaml"><button @click="createYamlFile" :disabled="!newYamlName" class="px-3 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 disabled:opacity-50">创建</button></div></div></div>
+          <div><label class="block text-sm font-medium text-gray-700 mb-1">用例名称</label><input v-model="newCase.name" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none" placeholder="例如: login_user"></div>
+        </div>
+        <div class="p-6 border-t border-gray-200 flex justify-end space-x-3"><button @click="showCreateModal = false" class="px-4 py-2 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition">取消</button><button @click="createTestCase" :disabled="!newCase.name || !newCase.file_path" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50">创建用例</button></div>
+      </div>
+    </div>
+  `, `
+    <button @click="showCreateModal = true" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center transition"><i class="fas fa-plus mr-2"></i>新建用例</button>
+    <button @click="loadAll" class="text-gray-500 hover:text-gray-700 transition"><i class="fas fa-sync-alt text-xl"></i></button>
+  `),
+  setup() {
+    const shell = pageShell('testcases', '测试用例');
+    const testCases = ref([]);
+    const testcaseDirs = ref(['.']);
+    const searchKeyword = ref('');
+    const expandedFiles = ref([]);
+    const selectedCase = ref(null);
+    const selectedCaseFile = ref('');
+    const caseDetailContent = ref(null);
+    const isEditing = ref(false);
+    const savingCase = ref(false);
+    const showCreateModal = ref(false);
+    const newDirPath = ref('');
+    const newYamlName = ref('');
+    const newCase = ref({ dir_path: '.', file_path: '', name: '' });
+    const editingCase = ref({ name: '', desc: '', inter_type: 'http', domain: '', url: '', method: 'GET', plc: '', headersStr: '{}', data: { data_type: 'FORM', body: '' }, extractsStr: '{}', assertsStr: '{}', beforeCasesStr: '' });
+
+    const filteredTestCases = computed(() => {
+      if (!searchKeyword.value) return testCases.value;
+      const keyword = searchKeyword.value.toLowerCase();
+      return testCases.value.map(file => ({ ...file, cases: file.cases.filter(item => item.name.toLowerCase().includes(keyword) || (item.desc || '').toLowerCase().includes(keyword)) })).filter(file => file.cases.length > 0);
+    });
+
+    const loadTestCases = async () => { testCases.value = await api('/testcases'); expandedFiles.value = testCases.value.map(file => file.path); };
+    const loadTestcaseDirs = async () => { testcaseDirs.value = await api('/testcase-dirs'); };
+    const loadAll = async () => { await loadTestCases(); await loadTestcaseDirs(); };
+    const toggleFileExpand = path => { const idx = expandedFiles.value.indexOf(path); idx > -1 ? expandedFiles.value.splice(idx, 1) : expandedFiles.value.push(path); };
+    const selectTestCase = async (filePath, caseItem) => { selectedCase.value = caseItem; selectedCaseFile.value = filePath; isEditing.value = false; caseDetailContent.value = (await api(`/testcases/${filePath}/${caseItem.name}`)).content; };
+    const startEditing = () => { const c = caseDetailContent.value || {}; isEditing.value = true; editingCase.value = { name: selectedCase.value.name, desc: c.desc || '', inter_type: c.inter_type || 'http', domain: c.domain || '', url: c.url || '', method: c.method || 'GET', plc: c.plc || '', headersStr: JSON.stringify(c.headers || {}, null, 2), data: { data_type: c.data?.data_type || 'FORM', body: c.data?.body || '' }, extractsStr: JSON.stringify(c.extracts || {}, null, 2), assertsStr: JSON.stringify(c.asserts || {}, null, 2), beforeCasesStr: (c.before_cases || []).join(', ') }; };
+    const cancelEditing = () => { isEditing.value = false; };
+    const saveTestCase = async () => { savingCase.value = true; try { const payload = { name: editingCase.value.name, desc: editingCase.value.desc, inter_type: editingCase.value.inter_type, domain: editingCase.value.domain, url: editingCase.value.url, method: editingCase.value.method, plc: editingCase.value.plc || undefined, headers: JSON.parse(editingCase.value.headersStr || '{}'), data: editingCase.value.data, extracts: JSON.parse(editingCase.value.extractsStr || '{}'), asserts: JSON.parse(editingCase.value.assertsStr || '{}'), before_cases: editingCase.value.beforeCasesStr ? editingCase.value.beforeCasesStr.split(',').map(s => s.trim()).filter(Boolean) : [] }; await api(`/testcases/${selectedCaseFile.value}/${selectedCase.value.name}`, { method: 'PUT', body: JSON.stringify(payload) }); isEditing.value = false; await loadTestCases(); await selectTestCase(selectedCaseFile.value, { ...selectedCase.value, name: payload.name }); } catch (e) { alert('保存失败: ' + e.message); } finally { savingCase.value = false; } };
+    const deleteTestCase = async () => { if (!confirm(`确定删除 ${selectedCase.value.name} 吗？`)) return; await api(`/testcases/${selectedCaseFile.value}/${selectedCase.value.name}`, { method: 'DELETE' }); selectedCase.value = null; caseDetailContent.value = null; await loadTestCases(); };
+    const createTestcaseDir = async () => { const data = await api('/testcase-dirs', { method: 'POST', body: JSON.stringify({ path: newDirPath.value }) }); newCase.value.dir_path = data.path || newDirPath.value; newDirPath.value = ''; await loadTestcaseDirs(); };
+    const createYamlFile = async () => { const dir = newCase.value.dir_path === '.' ? '' : `${newCase.value.dir_path}/`; const filePath = newYamlName.value.includes('/') || newYamlName.value.includes('\\') ? newYamlName.value : `${dir}${newYamlName.value}`; const data = await api('/testcase-files', { method: 'POST', body: JSON.stringify({ path: filePath }) }); newCase.value.file_path = data.path; newYamlName.value = ''; await loadAll(); };
+    const createTestCase = async () => { const payload = { name: newCase.value.name, desc: '', inter_type: 'http', domain: '\${cache._domain}', url: '', method: 'GET', headers: {}, data: { data_type: 'FORM', body: '' }, extracts: {}, asserts: {}, before_cases: [] }; await api(`/testcases/${newCase.value.file_path}`, { method: 'POST', body: JSON.stringify(payload) }); showCreateModal.value = false; newCase.value = { dir_path: '.', file_path: '', name: '' }; await loadAll(); };
+
+    onMounted(async () => { await shell.initShell(); await loadAll(); });
+    return { ...shell, testCases, testcaseDirs, searchKeyword, filteredTestCases, expandedFiles, selectedCase, selectedCaseFile, caseDetailContent, isEditing, editingCase, savingCase, showCreateModal, newDirPath, newYamlName, newCase, getCaseIcon, loadAll, toggleFileExpand, selectTestCase, startEditing, cancelEditing, saveTestCase, deleteTestCase, createTestcaseDir, createYamlFile, createTestCase };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>

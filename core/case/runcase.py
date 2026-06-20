@@ -73,3 +73,7 @@ class AsyncRunCase:
         generator = CompactHTMLTestReportGenerator(self.report.model_dump())
         generator.save_report("html_report.html")
         return self.report
+
+    async def fastapi_run(self):
+        await self.__run_all_cases()
+        return self.report
